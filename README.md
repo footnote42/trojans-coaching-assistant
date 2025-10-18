@@ -19,7 +19,9 @@ The Trojans Coaching Assistant helps rugby coaches at Trojans RFC quickly genera
 
 ## Screenshots
 
-*[Add screenshots here once deployed]*
+![Main Interface](images/main-interface.png)
+![Session Plan Example](images/session-plan-example.png)
+![Message to Parents](images/message-to-parents.png)
 
 ## Tech Stack
 
