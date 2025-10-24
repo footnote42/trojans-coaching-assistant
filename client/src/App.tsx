@@ -252,13 +252,7 @@ export default function TrojansCoachingAssistant() {
   };
 
   const getCoachingAdvice = async () => {
-    // Check for API key first
-    const apiKey = apiKeyStorage.get();
-    if (!apiKey) {
-      setShowApiKeyModal(true);
-      return;
-    }
-
+    
     setLoading(true);
     setError("");
     setResponse("");
