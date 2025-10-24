@@ -8,6 +8,8 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
+import { apiKeyStorage } from './lib/api-key-storage';
+import { ApiKeyModal } from './components/ApiKeyModal';
 
 export default function TrojansCoachingAssistant() {
   // Session inputs
@@ -28,6 +30,7 @@ export default function TrojansCoachingAssistant() {
   const [error, setError] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   const ageGroups = [
     "U6",
@@ -109,10 +112,10 @@ export default function TrojansCoachingAssistant() {
         pitchSize: "60m x 30m",
         halfLength: "15 minutes",
         maxPlayTime: "60 minutes per day",
-        contactLevel: "Tackle including hold - below sternum",  // ✅ CORRECTED
+        contactLevel: "Tackle including hold - below sternum",
         scrums: "None initially, introduce towards end of season",
         lineouts: "None",
-        kickoffs: "Free pass from halfway",  // ✅ CORRECTED
+        kickoffs: "Free pass from halfway",
         kicking: "None",
         notes:
           "Introduction to contact. Emphasis on safe tackle technique. Contact game starts.",
@@ -127,7 +130,7 @@ export default function TrojansCoachingAssistant() {
           "Full tackle (not hold), ruck (1 support player), maul (1 support player)",
         scrums: "3-player uncontested scrums",
         lineouts: "None",
-        kickoffs: "Free pass from halfway",  // ✅ CORRECTED
+        kickoffs: "Free pass from halfway",
         kicking: "None",
         notes:
           "Rucks and mauls with 1 support player per team. Tackle not hold.",
@@ -213,11 +216,10 @@ export default function TrojansCoachingAssistant() {
         maxPlayTime: "90 minutes per day",
         contactLevel: "Full contact, tackle below base of sternum",
         scrums: "8-player contested scrums",
-        lineouts: "Contested lineout - lift permitted",
+        lineouts: "Contested lineout - lift and support",
         kickoffs: "Drop kick from halfway",
         kicking: "Full kicking allowed",
-        notes:
-          "Contested lineouts introduced. 17 year olds can play adult rugby (not front row)",
+        notes: "Tackle height restriction continues",
       },
       U17: {
         format: "Contact Rugby",
@@ -227,276 +229,118 @@ export default function TrojansCoachingAssistant() {
         maxPlayTime: "90 minutes per day",
         contactLevel: "Full contact, tackle below base of sternum",
         scrums: "8-player contested scrums",
-        lineouts: "Contested lineout",
+        lineouts: "Contested lineout - lift and support",
         kickoffs: "Drop kick from halfway",
         kicking: "Full kicking allowed",
-        notes:
-          "Can play adult rugby from 17th birthday (not front row until 18)",
+        notes: "Tackle height restriction continues",
       },
       U18: {
         format: "Contact Rugby",
         teamSize: "15v15",
         pitchSize: "100m x 70m",
-        halfLength: "35 minutes",
-        maxPlayTime: "90 minutes per day",
+        halfLength: "40 minutes",
+        maxPlayTime: "100 minutes per day",
         contactLevel: "Full contact, tackle below base of sternum",
         scrums: "8-player contested scrums",
-        lineouts: "Contested lineout",
+        lineouts: "Contested lineout - lift and support",
         kickoffs: "Drop kick from halfway",
         kicking: "Full kicking allowed",
-        notes:
-          "Full adult rugby from 18th birthday. Girls joint age band (U16/17/18)",
+        notes: "Full rugby laws apply. Tackle height restriction continues.",
       },
     };
     return rules[age] || rules["U10"];
   };
 
-  const getFrameworkForAge = (age: string) => {
-    const ageNum = parseInt(age.substring(1));
-    if (ageNum <= 8) {
-      return {
-        simplified: true,
-        principles:
-          "Focus on FUNdamentals: Running, catching, passing, evasion, decision-making",
-        treds: "Enjoyment and Teamwork are primary",
-      };
-    }
-    return {
-      simplified: false,
-      principles: "Full RFU Principles of Play",
-      treds: "All TREDS values",
-    };
-  };
-
-  const provideFeedback = async (thumbsUp: boolean) => {
-    setFeedback(thumbsUp ? "positive" : "negative");
-
-    console.log({
-      feedback: thumbsUp ? "thumbs_up" : "thumbs_down",
-      ageGroup,
-      sessionFocus,
-      coachingMethod,
-      challenge,
-      timestamp: new Date().toISOString(),
-    });
-
-    setTimeout(() => setFeedback(null), 2000);
-  };
-
   const getCoachingAdvice = async () => {
+    // Check for API key first
+    const apiKey = apiKeyStorage.get();
+    if (!apiKey) {
+      setShowApiKeyModal(true);
+      return;
+    }
+
     setLoading(true);
     setError("");
     setResponse("");
     setWhatsappSummary("");
+    setFeedback(null);
 
-    const framework = getFrameworkForAge(ageGroup);
-    const reg15 = getRegulation15Rules(ageGroup);
-    const ageNum = parseInt(ageGroup.substring(1));
+    const regulation15 = getRegulation15Rules(ageGroup);
 
-    const methodDescription: Record<string, string> = {
-      "game-skill-zone": `Game Zone/Skill Zone Cycle:
-1. Start with game where problem emerges
-2. Isolate skill in focused practice
-3. Return to game to apply skill`,
-      "freeze-frame": `Freeze Frame/Rewind Method:
-1. Stop game at coaching moment
-2. Reset to that position
-3. Use questions to build awareness
-4. Restart from reset position`,
-      "block-practice": `Block Practice (Pull Outs):
-1-3 players removed from game
-Focus on key skill/technique
-Short & sharp (2-3 mins)
-Return to game with enhanced skill`,
-      "decision-making": `Decision Making Pull Outs:
-Address skill gap or tactical need
-Minimum 2 decisions required
-Up to 5 mins meaningful activity
-Return solution to game`,
+    const coachingMethodDescriptions: Record<string, string> = {
+      "game-skill-zone":
+        "Use Game Zone (decision-making games) and Skill Zone (isolated skill practice) approach. Start with an unopposed game, then move to skill practice, then return to an opposed game.",
+      "freeze-frame":
+        "Use Freeze Frame technique - stop the action to highlight key learning moments, rewind and replay scenarios for better understanding.",
+      "block-practice":
+        "Use Block Practice (repetitive drills) and Pull Outs (isolating individuals for specific coaching). Break down skills into components and practice repeatedly.",
+      "decision-making":
+        "Focus on decision-making activities where players must read the game and choose appropriate actions. Use question-led coaching.",
     };
 
-    const prompt = `You are an expert rugby coach assistant for Trojans RFC, strictly following RFU Regulation 15.
+    const prompt = `You are an expert rugby coach creating a detailed training session plan following RFU Regulation 15 (2025-26 season).
 
-TROJANS COACHING FRAMEWORK:
-Vision: "To support every player to develop a passion for a lifetime of rugby"
-Ethos: "To be an inclusive club, offering opportunities for ALL players to enjoy and develop the skills, behaviours and values rugby offers"
+**COACHING CHALLENGE:**
+${challenge}
 
-THE TROJANS PLAYER (what we develop):
-BEHAVIOURS: Teamwork, Resilience, Enjoyment, Discipline, Sportsmanship, Creativity, Awareness, Decision making, Self-organising
-SKILLS: Agility, Balance, Coordination, Footwork, Pass/catch, Tackling, Fitness, Body control, Core strength, Flexibility
-KNOWLEDGE: ${ageNum <= 8 ? "Basic rules, safety, spatial awareness, tag technique" : "Offside, Run forward/pass back, Scrum, Lineout, Playing positions, Defensive line, Attacking shape, Kicking, Age grade rules, Ruck/maul"}
+**AGE GROUP:** ${ageGroup}
+**SESSION FOCUS:** ${sessionFocus}
+**COACHING METHOD:** ${coachingMethodDescriptions[coachingMethod]}
+**SESSION DURATION:** ${sessionDuration} minutes
+**NUMBER OF PLAYERS:** ${numPlayers}
+**NUMBER OF COACHES:** ${numCoaches}
 
-TREDS VALUES: Teamwork, Respect, Enjoyment, Discipline, Sportsmanship
-${framework.simplified ? "(Focus primarily on Enjoyment and Teamwork for this age)" : ""}
+**RFU REGULATION 15 RULES FOR ${ageGroup}:**
+- Format: ${regulation15.format}
+- Team Size: ${regulation15.teamSize}
+- Pitch Size: ${regulation15.pitchSize}
+- Half Length: ${regulation15.halfLength}
+- Contact Level: ${regulation15.contactLevel}
+- Scrums: ${regulation15.scrums}
+- Lineouts: ${regulation15.lineouts}
+- Kickoffs: ${regulation15.kickoffs}
+- Kicking: ${regulation15.kicking}
+- Notes: ${regulation15.notes}
 
-${
-  ageNum >= 9
-    ? `RFU PRINCIPLES OF PLAY:
-1. Go Forward - advancing toward opposition try line
-2. Support - being available to help ball carrier
-3. Continuity - keeping ball alive and in play
-4. Pressure - applying defensive pressure
-5. Contest - competing for possession
+**IMPORTANT INSTRUCTIONS:**
+1. **Strictly adhere to RFU Regulation 15** for ${ageGroup} - no activities that go beyond the permitted contact level or use prohibited elements
+2. Follow the coaching method: ${coachingMethodDescriptions[coachingMethod]}
+3. Embed "Coaching Habits" in every activity:
+   - Player names (use diverse names reflecting UK demographics)
+   - Questioning techniques
+   - Positive reinforcement examples
+   - How to give effective feedback
+4. Use STEP Principle for progressions (Space, Task, Equipment, People)
+5. Include timing for each activity
+6. Suggest appropriate Keep Your Boots On (KYBO) video resources
+7. Account for ${numCoaches} coaches - suggest how to organize groups
+8. Address the coaching challenge: ${challenge}
 
-PRIMARY TACTICS:
-- Go Through: Identify gaps/weak shoulders to penetrate
-- Go Around: Narrow defence, exploit outside space
-- Go Over: Draw defence, play ball behind into back field`
-    : ""
-}
+**SESSION STRUCTURE:**
+Create a ${sessionDuration}-minute session with:
+1. Arrival Activity (5-10 mins) - game-based, no equipment setup
+2. Warm-up (10 mins) - dynamic, rugby-specific
+3. Main Activities (${sessionDuration - 30} mins) - following chosen coaching method
+4. Cool-down & Reflection (5-10 mins)
 
-CRITICAL - RFU REGULATION 15 RULES FOR ${ageGroup}:
-Format: ${reg15.format}
-Team Size: ${reg15.teamSize}
-Half Length: ${reg15.halfLength}
-Max Play Time: ${reg15.maxPlayTime}
-Contact Level: ${reg15.contactLevel}
-Scrums: ${reg15.scrums}
-Lineouts: ${reg15.lineouts}
-Kickoffs: ${reg15.kickoffs}
-Important Notes: ${reg15.notes}
+For EACH activity provide:
+- Activity name & description
+- Organisation (space, players per group, coach positioning)
+- Key coaching points
+- STEP progressions (2-3 levels)
+- Example coaching dialogue (with player names)
+- Safety considerations
+- Link to relevant KYBO video topic (descriptive, no URLs)
 
-YOU MUST design activities that comply with these rules. Do not suggest activities involving contact for U7-U8, or contested scrums for U9-U10, etc.
-
-COACHING METHOD FOR THIS SESSION:
-${methodDescription[coachingMethod]}
-
-STEP PRINCIPLE (use for progressions):
-Space - adjust area size
-Task - change rules/objectives
-Equipment - vary equipment
-People - change numbers/groupings
-
-TROJANS COACHING HABITS (must embed in every activity):
-1. Shared Purpose - Clear aim linked to Trojans Player, shared with players
-2. Progression - Start achievable for ALL, build challenge using STEP
-3. Praise - Specific, linked to TREDS values (give examples per activity)
-4. Review - Questions throughout, encourage player-led reflection
-5. Choice - Give players ownership (specify where they can make choices)
-
-Sessions must be APES: Active, Purposeful, Enjoyable, Safe
-
-SESSION CONTEXT:
-- Age group: ${ageGroup}
-- Number of players: ${numPlayers}
-- Number of coaches: ${numCoaches}
-- Session length: ${sessionDuration} minutes
-- Session focus: ${sessionFocus}
-
-COACHING CHALLENGE:
-"${challenge}"
-
-IMPORTANT GUIDELINES:
-- Keep activities age-appropriate for ${ageGroup}
-- Use simple, memorable language coaches can recall on pitch
-- Suggest specific RFU Kids First/Keep Your Boots On video titles (coaches will search YouTube)
-- Respect Reg 15 rules absolutely - no exceptions
-${ageNum <= 8 ? "- Focus on fun, movement, basic skills. No tactics." : ""}
-${ageNum === 9 ? "- This is transitional contact - emphasize safe tackle technique" : ""}
-
-Provide a complete session plan:
-
-SESSION PURPOSE:
-[One sentence linking to Trojans Player and ${ageNum >= 9 ? "RFU Principles" : "FUNdamentals"}]
-
-EQUIPMENT REQUIRED:
-[Specific list with quantities needed for ${numPlayers} players]
-
-SAFETY BRIEF (to communicate at start):
-[${ageGroup}-specific safety points including Reg 15 requirements]
-
-${
-  coachingMethod === "game-skill-zone"
-    ? `
-WARM-UP / ACTIVATE (${Math.round(sessionDuration * 0.17)} mins):
-Activity name:
-Description: [${reg15.teamSize} appropriate]
-Coaching Points (max 3):
-STEP Progressions:
-Coaching Habits: [How to embed Shared Purpose, Progression, Praise, Review, Choice]
-TREDS emphasis:
-Trojans Player elements:
-
-GAME ZONE 1 (${Math.round(sessionDuration * 0.25)} mins):
-Activity name:
-Description: [Must use ${reg15.format} format]
-What to observe: [Problems likely to emerge]
-${ageNum >= 9 ? "RFU Principles featured:" : "FUNdamentals focus:"}
-Coaching Points (max 3):
-Coaching Habits:
-TREDS emphasis:
-
-SKILL ZONE (${Math.round(sessionDuration * 0.25)} mins):
-Activity name:
-Description: [Address problem from Game Zone]
-Coaching Points (max 3):
-STEP Progressions:
-Coaching Habits:
-TREDS emphasis:
-Trojans Player elements:
-
-GAME ZONE 2 (${Math.round(sessionDuration * 0.25)} mins):
-Activity name:
-Description: [Return to ${reg15.format}]
-Success criteria: [What improvement to look for]
-${ageNum >= 9 ? "RFU Principles featured:" : "FUNdamentals applied:"}
-Coaching Points (max 3):
-Coaching Habits:
-TREDS emphasis:
-`
-    : coachingMethod === "freeze-frame"
-      ? `
-WARM-UP (${Math.round(sessionDuration * 0.17)} mins):
-[Activity with Coaching Points]
-
-MAIN GAME (${Math.round(sessionDuration * 0.6)} mins):
-Game: [${reg15.format} format]
-When to Freeze: [3-4 key moments]
-Questions to ask: [Build player awareness]
-How to reset and restart:
-Coaching Habits throughout:
-
-PROGRESSION:
-[How game evolves]
-`
-      : `
-WARM-UP (${Math.round(sessionDuration * 0.17)} mins):
-[Activity]
-
-MAIN ACTIVITY (${Math.round(sessionDuration * 0.5)} mins):
-[Primary activity with ${reg15.format} format]
-Pull-Out opportunities:
-Focus of pull-out:
-Return criteria:
-Coaching Habits:
-
-GAME APPLICATION (${Math.round(sessionDuration * 0.25)} mins):
-[Apply skills in ${reg15.format}]
-`
-}
-
-COOL DOWN (${Math.round(sessionDuration * 0.08)} mins):
-[Brief activity and player-led review]
-
-REVIEW QUESTIONS FOR COACHES:
-[3-4 open questions to ask during session]
-
-COACHING ORGANIZATION:
-[How to organize ${numPlayers} players with ${numCoaches} coaches - specific groupings and rotations]
-
-REGULATION 15 COMPLIANCE CHECK:
-[Confirm activities meet ${ageGroup} requirements: ${reg15.contactLevel}, ${reg15.teamSize}, etc.]
-
-YOUTUBE RESOURCES (RFU Kids First / Keep Your Boots On):
-[Suggest 2-3 specific video titles/topics coaches can search for to understand these activities better]
-
-Keep it practical, memorable, and pitch-ready for ${ageGroup}!`;
+Make it practical, detailed, and immediately usable for ${numCoaches} coach(es) with ${numPlayers} ${ageGroup} players.`;
 
     try {
       const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
@@ -513,14 +357,20 @@ Keep it practical, memorable, and pitch-ready for ${ageGroup}!`;
       const claudeResponse = data.content[0].text;
       setResponse(claudeResponse);
 
-      const summaryPrompt = `Create a brief WhatsApp message (max 120 words) for ${ageGroup} parents about this Sunday's session:
-- What skill we're working on
-- Why it matters for their development  
-- What to bring (gumshield, boots, water bottle)
-- Keep it enthusiastic and parent-friendly
-- Use 1-2 emojis max
+      // Generate WhatsApp summary
+      const whatsappPrompt = `Based on this rugby session plan for ${ageGroup}, create a brief WhatsApp message (150-200 words) that a coach can send to parents.
 
-Session: ${claudeResponse}`;
+Include:
+- What the session will focus on (${sessionFocus})
+- Key skills being developed
+- What to bring (kit, water, gumshield)
+- Positive, encouraging tone
+- Remind about pickup time
+
+Session plan:
+${claudeResponse}
+
+Format it ready to copy and paste into WhatsApp.`;
 
       const summaryResponse = await fetch(
         "https://api.anthropic.com/v1/messages",
@@ -528,56 +378,71 @@ Session: ${claudeResponse}`;
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
             max_tokens: 400,
-            messages: [{ role: "user", content: summaryPrompt }],
+            messages: [{ role: "user", content: whatsappPrompt }],
           }),
         },
       );
 
+      if (!summaryResponse.ok) {
+        throw new Error(`Summary request failed: ${summaryResponse.status}`);
+      }
+
       const summaryData = await summaryResponse.json();
-      setWhatsappSummary(summaryData.content[0].text);
-    } catch (err: any) {
-      setError(`Error: ${err.message}`);
-      console.error("API Error:", err);
+      const summaryClaude = summaryData.content[0].text;
+      setWhatsappSummary(summaryClaude);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const provideFeedback = (isPositive: boolean) => {
+    setFeedback(isPositive ? "positive" : "negative");
+    console.log(`Feedback: ${isPositive ? "👍" : "👎"}`);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-red-900 p-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6 border border-white/20">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">
-                🏉 Trojans Coaching Assistant v2.0
-              </h1>
-              <p className="text-blue-100">
-                RFU Regulation 15 Compliant Session Planning
-              </p>
-            </div>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-lg transition-colors"
-            >
-              <Settings size={24} />
-            </button>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+            🏉 Trojans Coaching Assistant
+          </h1>
+          <p className="text-blue-100 text-lg">
+            RFU Regulation 15 Compliant Session Plans
+          </p>
+          <p className="text-blue-200 text-sm mt-1">
+            v2.0 - Full Regulation 15 Compliance (2025-26 Season)
+          </p>
         </div>
 
         {/* Settings Panel */}
-        {showSettings && (
-          <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Settings size={24} />
               Session Settings
-            </h3>
+            </h2>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-blue-600 hover:text-blue-700 font-semibold"
+            >
+              {showSettings ? "Hide" : "Show"}
+            </button>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+          {showSettings && (
+            <div className="space-y-4 pt-4 border-t">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Age Group:
@@ -587,15 +452,25 @@ Session: ${claudeResponse}`;
                   onChange={(e) => setAgeGroup(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {ageGroups.map((ag) => (
-                    <option key={ag} value={ag}>
-                      {ag}
+                  {ageGroups.map((age) => (
+                    <option key={age} value={age}>
+                      {age}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-600 mt-1">
-                  {getRegulation15Rules(ageGroup).format}
-                </p>
+                {/* Display Regulation 15 Rules */}
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg text-xs">
+                  <p className="font-semibold text-blue-900 mb-1">
+                    📋 RFU Reg 15 Rules:
+                  </p>
+                  <p className="text-blue-800">
+                    {getRegulation15Rules(ageGroup).teamSize} •{" "}
+                    {getRegulation15Rules(ageGroup).contactLevel}
+                  </p>
+                  <p className="text-blue-700 mt-1">
+                    {getRegulation15Rules(ageGroup).notes}
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -607,59 +482,48 @@ Session: ${claudeResponse}`;
                   onChange={(e) => setSessionFocus(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {sessionFocusOptions.map((sf) => (
-                    <option key={sf} value={sf}>
-                      {sf}
+                  {sessionFocusOptions.map((focus) => (
+                    <option key={focus} value={focus}>
+                      {focus}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Coaching Method:
+                </label>
+                <select
+                  value={coachingMethod}
+                  onChange={(e) => setCoachingMethod(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {coachingMethods.map((method) => (
+                    <option key={method.value} value={method.value}>
+                      {method.label}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Coaching Method:
-              </label>
-              <select
-                value={coachingMethod}
-                onChange={(e) => setCoachingMethod(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                {coachingMethods.map((cm) => (
-                  <option key={cm.value} value={cm.value}>
-                    {cm.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* Main Input Section */}
-        <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-700">
-              <strong>Setup:</strong> {ageGroup} • {numPlayers} players •{" "}
-              {numCoaches} coaches • {sessionDuration} mins • {sessionFocus}
-            </p>
-            <p className="text-xs text-gray-600 mt-1">
-              <strong>Reg 15:</strong> {getRegulation15Rules(ageGroup).format} (
-              {getRegulation15Rules(ageGroup).teamSize})
-            </p>
-          </div>
-
+        {/* Main Form */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-6 mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Your Coaching Challenge:
           </label>
           <textarea
             value={challenge}
             onChange={(e) => setChallenge(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mb-4"
-            rows={3}
-            placeholder="e.g., My players struggle with support play in attack..."
+            placeholder="Describe what you want to achieve in this session..."
+            rows={4}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
           />
 
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Players:
@@ -866,6 +730,15 @@ Session: ${claudeResponse}`;
           </div>
         )}
       </div>
+
+      {/* API Key Modal */}
+      <ApiKeyModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+        onSave={() => {
+          setShowApiKeyModal(false);
+        }}
+      />
     </div>
   );
 }
