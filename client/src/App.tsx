@@ -335,17 +335,14 @@ For EACH activity provide:
 Make it practical, detailed, and immediately usable for ${numCoaches} coach(es) with ${numPlayers} ${ageGroup} players.`;
 
     try {
-      const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      const apiResponse = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: prompt }],
+          prompt: prompt,
+          maxTokens: 4000,
         }),
       });
 
@@ -372,22 +369,16 @@ ${claudeResponse}
 
 Format it ready to copy and paste into WhatsApp.`;
 
-      const summaryResponse = await fetch(
-        "https://api.anthropic.com/v1/messages",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 400,
-            messages: [{ role: "user", content: whatsappPrompt }],
-          }),
+      const summaryResponse = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          prompt: whatsappPrompt,
+          maxTokens: 400,
+        }),
+      });
 
       if (!summaryResponse.ok) {
         throw new Error(`Summary request failed: ${summaryResponse.status}`);
