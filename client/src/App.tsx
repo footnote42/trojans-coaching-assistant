@@ -8,7 +8,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
-import { apiKeyStorage } from './lib/api-key-storage';
+import { apiKeyStorage } from './lib/api-key-storage.ts';
 import { ApiKeyModal } from './components/ApiKeyModal';
 
 export default function TrojansCoachingAssistant() {
