@@ -109,10 +109,10 @@ export default function TrojansCoachingAssistant() {
         pitchSize: "60m x 30m",
         halfLength: "15 minutes",
         maxPlayTime: "60 minutes per day",
-        contactLevel: "Tackle including hold - below armpits",
+        contactLevel: "Tackle including hold - below sternum",  // ✅ CORRECTED
         scrums: "None initially, introduce towards end of season",
         lineouts: "None",
-        kickoffs: "Tap from halfway",
+        kickoffs: "Free pass from halfway",  // ✅ CORRECTED
         kicking: "None",
         notes:
           "Introduction to contact. Emphasis on safe tackle technique. Contact game starts.",
@@ -127,7 +127,7 @@ export default function TrojansCoachingAssistant() {
           "Full tackle (not hold), ruck (1 support player), maul (1 support player)",
         scrums: "3-player uncontested scrums",
         lineouts: "None",
-        kickoffs: "Drop kick from halfway",
+        kickoffs: "Free pass from halfway",  // ✅ CORRECTED
         kicking: "None",
         notes:
           "Rucks and mauls with 1 support player per team. Tackle not hold.",
