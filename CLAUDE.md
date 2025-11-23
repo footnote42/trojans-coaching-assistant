@@ -58,11 +58,14 @@ trojans-coaching-assistant/
 - `@shared/` → `shared/`
 - `@assets/` → `attached_assets/`
 
-**AI Integration (client/src/App.tsx):**
-- Direct API calls to Anthropic Claude API from frontend
-- API key stored in browser localStorage via `lib/api-key-storage.ts`
-- Modal prompts for API key if not present (components/ApiKeyModal.tsx)
+**AI Integration (Backend Proxy Pattern):**
+- Backend proxy route at `/api/generate` (server/routes.ts:7) handles all Anthropic API requests
+- API key stored securely in server environment variable (`ANTHROPIC_API_KEY`)
+- Frontend makes POST requests to backend proxy (client/src/App.tsx:332, 366)
+- Backend proxies requests to Anthropic Claude API with server-side API key
 - Uses Claude Sonnet 4.5 model (`claude-sonnet-4-20250514`)
+- **Benefits:** Enhanced security (API key never exposed to browser), centralized rate limiting, request logging capabilities
+- **Legacy artifacts:** `lib/api-key-storage.ts` and `components/ApiKeyModal.tsx` exist but are no longer used (candidates for removal)
 
 **Database (Currently Minimal Usage):**
 - Schema defined in `shared/schema.ts` using Drizzle ORM
@@ -110,11 +113,13 @@ This framework is embedded in the AI prompt at `client/src/App.tsx:281`.
    - Age-specific RFU rules
    - Trojans framework requirements
    - Coaching method (Game/Skill Zone, Freeze Frame, Block Practice, Decision Making)
-4. Sends prompt to Claude Sonnet API
-5. Parses response into:
+4. Frontend sends prompt to backend proxy endpoint `/api/generate`
+5. Backend proxy authenticates with Anthropic API using server-side `ANTHROPIC_API_KEY`
+6. Backend forwards request to Claude Sonnet API and returns response to frontend
+7. Frontend parses response into:
    - Main session plan (markdown formatted)
    - WhatsApp summary for parents
-6. Includes feedback system (thumbs up/down) for session quality
+8. Includes feedback system (thumbs up/down) for session quality
 
 ## UI Component Library
 
@@ -168,9 +173,11 @@ When modifying:
 ## Environment Variables
 
 Required:
-- `ANTHROPIC_API_KEY` - For Claude API access (stored in localStorage in browser)
+- `ANTHROPIC_API_KEY` - **Server-side only** - Anthropic API key for Claude access via backend proxy (server/routes.ts:12)
 - `DATABASE_URL` - PostgreSQL connection string for Neon Serverless
 - `PORT` - Server port (defaults to 5000, other ports are firewalled)
+
+**Security Note:** API key is never exposed to the frontend. All AI requests are proxied through the Express backend to keep credentials secure.
 
 ## Testing & Deployment
 
@@ -190,6 +197,10 @@ When working with rugby content:
 
 ## Known Issues & Roadmap
 
+### Technical Debt
+- **Legacy API key components:** `client/src/lib/api-key-storage.ts` and `client/src/components/ApiKeyModal.tsx` are no longer used after migration to backend proxy pattern. These files and their imports in App.tsx can be safely removed.
+
+### Planned Features
 See GitHub Issues for planned features:
 - Individual section regeneration (#3)
 - Trojans helmet logo (#2)
@@ -200,7 +211,8 @@ See GitHub Issues for planned features:
 
 ## Important Files Reference
 
-- `client/src/App.tsx` - Main application logic, AI integration, RFU rules
+- `client/src/App.tsx` - Main application logic, frontend AI integration, RFU rules
+- `server/routes.ts` - API routes including `/api/generate` proxy endpoint for Anthropic API
 - `shared/schema.ts` - Database and validation schemas
 - `server/index.ts` - Express server setup and middleware
 - `vite.config.ts` - Build configuration and path aliases
