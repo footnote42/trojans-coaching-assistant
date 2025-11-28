@@ -11,110 +11,37 @@ This document guides AI agents in understanding and contributing to the Trojans 
 ## Key Architecture Components
 
 1. **Client (`/client`)**
-   - Single-page React application with TypeScript
-   - Component-based UI using Radix UI primitives
-   - Global state management via React hooks
+   ```md
+   # Trojans Coaching Assistant — Quick AI Agent Guide
 
-2. **Server (`/server`)**
-   - Express.js backend for API routing
-   - Drizzle ORM with PostgreSQL (Neon Serverless)
-   - Session management with `express-session`
+   This repo is a single Express server that serves a React SPA and proxies Anthropic requests. Focus on the minimal facts an agent needs to be productive.
 
-3. **Shared (`/shared`)**
-   - Common TypeScript schemas using Drizzle and Zod
-   - Shared types and validation logic
+   - Top-level layout:
+     - `client/` — React + TypeScript UI (Radix primitives, Tailwind)
+     - `server/` — Express API and Vite middleware (`server/index.ts`, `server/vite.ts`)
+     - `shared/` — Drizzle ORM + Zod schemas (`shared/schema.ts`)
 
-## Critical Patterns & Conventions
+   - Core integration points to reference:
+     - AI proxy endpoint: `POST /api/generate` (see `server/routes.ts`). Payload: `{ prompt: string, maxTokens?: number }`.
+     - Prompt assembly: in `client/src/App.tsx` inside `getCoachingAdvice()`; RFU rules live in `getRegulation15Rules()`.
+     - Path aliases (vite): `@` → `client/src`, `@shared` → `shared` (`vite.config.ts`).
 
-1. **RFU Regulation 15 Compliance**
-   - Age group rules defined in `App.tsx` under `getRegulation15Rules()`
-   - All session plans must respect age-specific restrictions
-   - Reference actual rules when modifying age group logic
+   - Run & dev behavior (important):
+     - Frontend-only: `npm run dev` (runs Vite with `client/` root).
+     - Full app (API + Vite middleware): `npm start` (`tsx server/index.ts`) — use for end-to-end testing (recommended).
+     - Env vars: `ANTHROPIC_API_KEY` (server-only), `DATABASE_URL`, `PORT` (default 5000).
 
-2. **Component Structure**
-   - UI components use Radix + Tailwind
-   - Follow pattern in `/client/src/components/ui`
-   - Always include dark mode support
+   - Conventions and rules for contributors/agents:
+     - Never expose the server `ANTHROPIC_API_KEY` to client code; use the `/api/generate` proxy.
+     - RFU Regulation 15 rules in `getRegulation15Rules()` are authoritative. Any change must cite RFU docs and be validated across age groups.
+     - UI components go in `client/src/components/ui/` and should follow existing Radix+Tailwind patterns including dark mode.
+     - Database schema changes belong in `shared/schema.ts` (Drizzle) and updates should keep server/client types aligned.
 
-3. **Data Flow**
-   - API keys stored in `api-key-storage.ts`
-   - Database schema defined in `shared/schema.ts`
-   - Form validation with Zod schemas
+   - Quick examples:
+     - Where to change the prompt: `client/src/App.tsx`, search `getCoachingAdvice` and the prompt template near it.
+     - Call shape to generate session: `fetch('/api/generate', { method: 'POST', body: JSON.stringify({ prompt, maxTokens: 4000 }) })`.
 
-## Development Workflow
+   - Known legacy items: `client/src/lib/api-key-storage.ts` and `ApiKeyModal.tsx` are local-dev fallbacks — production uses server-side proxying.
 
-1. **Installation**
-```bash
-git clone https://github.com/footnote42/trojans-coaching-assistant.git
-cd trojans-coaching-assistant
-npm install
-cd client
-npm run dev
-```
-
-2. **Environment Setup**
-   - Requires Anthropic API key
-   - PostgreSQL connection (if using DB features)
-   - Node.js 18+
-
-3. **Key Commands**
-   - `npm run dev` - Start development server
-   - `npm run build` - Production build
-   - `npm run preview` - Preview production build
-
-## Integration Points
-
-1. **Claude AI Integration**
-   - Uses Sonnet 4.5 model via Anthropic API
-   - Prompt engineering in `App.tsx`
-   - Required for session plan generation
-
-2. **Database**
-   - Neon Serverless PostgreSQL
-   - User management schemas
-   - Session plan storage (planned)
-
-## Common Tasks
-
-1. **Adding UI Components**
-   - Place in `/client/src/components/ui`
-   - Follow Radix UI + Tailwind patterns
-   - Include dark mode styles
-
-2. **Modifying Session Plans**
-   - Update prompts in `App.tsx`
-   - Test across all age groups
-   - Ensure RFU compliance
-
-3. **API Integration**
-   - Add routes in `server/routes.ts`
-   - Update shared types in `shared/schema.ts`
-   - Add corresponding client hooks
-
-## Project-Specific Guidelines
-
-1. **Rugby Content**
-   - Follow RFU Regulation 15 age grade rules
-   - Use correct rugby terminology
-   - Consider safety in all activities
-
-2. **Code Style**
-   - TypeScript strict mode
-   - Functional React components
-   - Tailwind for styling
-   - Zod for validation
-
-## Key Files to Know
-
-- `App.tsx` - Main application logic and AI integration
-- `shared/schema.ts` - Database and validation schemas
-- `components/ui/*` - Reusable UI components
-- `server/routes.ts` - API endpoints
-- `lib/api-key-storage.ts` - API key management
-
-## Notes
-
-- User feedback system in development
-- WhatsApp message generation requires specific formatting
-- YouTube resource suggestions focus on Keep Your Boots On series
-- Age group restrictions must be strictly enforced
+   If you want, I can expand this file with short examples of prompt sanitization, test payloads, or a checklist for safe changes to RFU rules.
+   ```

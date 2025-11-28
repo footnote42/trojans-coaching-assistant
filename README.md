@@ -58,21 +58,42 @@ The Trojans Coaching Assistant helps rugby coaches at Trojans RFC quickly genera
    npm install
 ```
 
-4. **Start development server**
-```bash
-   npm run dev
+4. **Start development (two options)**
+
+- Frontend-only (fast UI dev with Vite):
+```powershell
+cd client
+npm run dev
 ```
+Opens the Vite dev server (default port `5173`). Use this when iterating only on React components or styles.
+
+- Full app (recommended for end-to-end testing — API proxy + Vite middleware):
+```powershell
+# from repository root
+npm start
+```
+This runs the Express server (`server/index.ts`) which integrates Vite in dev mode; it serves the API and the client together (default port `5000`). Use this to exercise `/api/generate` and server-side behavior.
 
 5. **Open in browser**
-```
-   http://localhost:5173
-```
+
+- Frontend-only: `http://localhost:5173`
+- Full app (server): `http://localhost:5000`
 
 ### Note on API Access
 
 The Claude API integration requires an Anthropic API key. During development/testing, the application can be accessed via the [Claude.ai shared artifact link](https://claude.ai/public/artifacts/b1063080-9538-4ace-9ab3-76ca48ace623) which provides free API access.
 
 For production deployment with your own API key, environment variables need to be configured (documentation coming soon).
+
+### Developer Notes (env & safety)
+
+- Server-side API key: set `ANTHROPIC_API_KEY` in your server environment. The backend proxy endpoint `/api/generate` (see `server/routes.ts`) uses this key — do not commit or expose it.
+
+- Optional local dev key: `client/src/lib/api-key-storage.ts` will read `import.meta.env.VITE_ANTHROPIC_API_KEY` if present. This is only for development convenience; production uses the server proxy.
+
+- Database: if you enable DB features, set `DATABASE_URL` (Neon/Postgres) and follow `shared/schema.ts` for schema changes.
+
+- Ports: `PORT` env var overrides the default `5000` used by the server.
 
 ## How It Works
 
