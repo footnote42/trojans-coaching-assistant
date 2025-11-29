@@ -1,31 +1,13 @@
 {
-  "version": 2,
   "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "outputDirectory": "dist/public",
+  "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/generate-session",
-      "destination": "/api/generate-session"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/generate-session",
-      "dest": "/api/generate-session.ts"
-    }
-  ],
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
