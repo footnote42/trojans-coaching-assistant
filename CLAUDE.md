@@ -1,312 +1,718 @@
-# CLAUDE.md
+# CLAUDE.md - Project Handoff Document
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides comprehensive guidance to Claude Code (claude.ai/code) and future developers working with the Trojans Coaching Assistant codebase.
 
-## Project Overview
+**Last Updated:** November 2025 (v2.1 - Production Deployment)
 
-Trojans Coaching Assistant is an AI-powered rugby training session planner for Trojans RFC that generates RFU Regulation 15 compliant coaching plans. The application uses Claude Sonnet 4.5 via the Anthropic API to create age-appropriate, comprehensive training sessions that follow the club's coaching framework.
+---
 
-**Tech Stack:** React 18 + TypeScript, Express.js, Vite, Tailwind CSS, Radix UI, Drizzle ORM, PostgreSQL (Neon Serverless)
+## 📋 Project Overview & Purpose
 
-**Current Status:** ✅ **Production-Ready** - Fully functional application with complete UI/UX improvements
+### What This Is
+The Trojans Coaching Assistant is an AI-powered rugby training session planner specifically designed for **Trojans RFC volunteer coaches**. It generates comprehensive, age-appropriate coaching session plans that:
+- Comply with **RFU Regulation 15** age-grade rules (U6-U18)
+- Follow the **Trojans Coaching Framework** (TREDS values, coaching habits)
+- Are tailored to the coach's specific challenge ("players struggle with support play")
+- Can be generated in 30 seconds instead of 2+ hours of manual planning
 
-## Recent Updates (v2.1 - November 2025)
+### Why This Exists
+**Problem:** Trojans RFC volunteer coaches (many with full-time jobs) need to plan 90-minute training sessions that are safe, engaging, and compliant with complex RFU regulations. Manual planning takes 2-3 hours per session.
 
-**Major UI/UX Improvements Completed:**
+**Solution:** AI-powered session generator that encapsulates:
+1. RFU Regulation 15 age-grade rules (updated annually)
+2. Trojans RFC coaching framework and club ethos
+3. Best practice coaching methodologies (Game Zone, Freeze Frame, etc.)
+4. Age-appropriate activity progressions using STEP principles
 
-✅ **Structured Session Plan Parser & Display**
-- Created `lib/session-parser.ts` - Custom markdown parser that structures AI responses into sections
-- Built `SessionPlan.tsx` component with Radix UI Accordion for collapsible activity display
-- Individual section copy-to-clipboard functionality
-- Duration badges and numbered activity indicators
-- Support for nested subsections with visual hierarchy
+**Impact:** Reduces session planning from 2+ hours to 30 seconds while ensuring compliance and quality.
 
-✅ **Modern User Feedback System**
-- Replaced browser `alert()` calls with Radix UI Toast notifications
-- Toast configuration: 3-message limit, 3-second auto-dismiss
-- Success/error/info variants with proper styling
-- Template loading confirmations and clipboard feedback
+### Current Status
+- **Version:** v2.1 (Production-ready)
+- **Deployment:** Vercel (https://trojans-coaching-assistant.vercel.app/)
+- **Tech Stack:** React 18 + TypeScript, Express.js, Vite, Tailwind CSS, Radix UI, Claude Sonnet 4.5
+- **Database:** PostgreSQL + Drizzle ORM (minimal usage, prepared for future)
 
-✅ **Enhanced Loading States**
-- `SessionPlanSkeleton.tsx` component for professional loading experience
-- Multi-stage loading indicators ("Generating your session plan...")
-- Estimated completion time display (10-30 seconds)
-- Animated placeholders matching final structure
+---
 
-✅ **Reorganized Form Layout**
-- Three-tier card-based hierarchy for better information flow:
-  1. **Your Coaching Challenge** - Prominent textarea with tips
-  2. **Session Details** - Grid layout for players/coaches/duration
-  3. **Advanced Settings** - Collapsible card with age group/focus/method
-- Color-coded RFU Regulation 15 rules (green/yellow/orange by contact level)
-- Enhanced desktop generate button with gradient and hover effects
-- Proper ARIA accessibility attributes throughout
+## 🏗️ Key Architectural Decisions
 
-✅ **Quick-Start Template Library**
-- `lib/templates.ts` with 4 pre-built coaching challenges
-- `TemplateLibrary.tsx` component with responsive grid
-- Auto-fill functionality with smooth scrolling to challenge textarea
-- Toast confirmations on template selection
+### Decision 1: Vercel Deployment with Frontend-Only Strategy
 
-✅ **Mobile Responsive Enhancements**
-- Fixed sticky generate button for mobile (hidden on desktop)
-- Touch-optimized button sizes (48px minimum height)
-- Responsive grid layouts throughout
-- Mobile-first design patterns
+**What:** The application is deployed to Vercel as a static site with serverless Edge Functions for API routes.
 
-## Development Commands
+**Why:**
+- **Zero infrastructure management** - No server maintenance, auto-scaling, global CDN
+- **Vercel's free tier** is generous for a club application with moderate usage
+- **Edge Functions** handle backend proxy without maintaining an Express server in production
+- **Instant deploys** from GitHub pushes enable rapid iteration
 
-### Running the Application
-```bash
-npm run dev          # Start Vite development server (frontend only)
-npm start            # Start Express server (includes Vite in dev mode, serves on port 5000)
-npm run build        # Production build
+**How it works:**
+- `npm run build` generates static assets to `dist/public/`
+- Vercel serves static files from CDN
+- API routes in `server/routes.ts` compile to serverless Edge Functions
+- Environment variables configured in Vercel dashboard
+
+**Trade-offs:**
+- Edge Functions have cold start latency (~100-500ms on first request)
+- Limited to 10-second execution time (acceptable for AI API calls)
+- Serverless means no persistent in-memory state (must use external storage)
+
+**Alternative considered:** Full Express server on Railway/Render - rejected due to cost and maintenance overhead for a volunteer club project.
+
+### Decision 2: Backend Proxy Pattern for API Security
+
+**What:** Frontend makes requests to `/api/generate-session` which proxies to Anthropic API using server-side `ANTHROPIC_API_KEY`.
+
+**Why:**
+- **Security:** API key never exposed to browser (prevents key theft/abuse)
+- **Rate limiting:** Centralized control over API usage
+- **Logging:** Comprehensive request tracking for debugging and usage monitoring
+- **Cost control:** Server-side validation prevents malicious or oversized requests
+
+**How it works:**
+1. Frontend sends POST to `/api/generate-session` with prompt and parameters
+2. Backend validates request, adds server-side API key
+3. Backend proxies to Anthropic Claude API
+4. Response streams back through backend to frontend
+
+**Critical file:** `server/routes.ts:12` - Contains the proxy logic with comprehensive logging
+
+**Trade-offs:**
+- Adds latency (~50-100ms) vs direct frontend API calls
+- Requires server-side environment (can't use purely static hosting)
+- But security and cost control benefits far outweigh latency cost
+
+**Legacy dual API key system:** The application still includes `lib/api-key-storage.ts` for client-side API key fallback. This is **technical debt** and should be removed once server-side proxy is proven stable in production.
+
+### Decision 3: RFU Regulation 15 Rules Hardcoded in Frontend
+
+**What:** All RFU age-grade rules are hardcoded in `client/src/App.tsx:66` in the `getRegulation15Rules()` function.
+
+**Why:**
+- **Rules are authoritative** - These are legal safety requirements, not user preferences
+- **Offline validation** - Coaches can see rules instantly without API calls
+- **Cost savings** - No database queries for every session generation
+- **Simplicity** - Rules change annually (predictable update cycle), no need for dynamic management
+- **Trust** - Rules are visible in code, coaches can verify compliance
+
+**How it works:**
+```typescript
+const getRegulation15Rules = (ageGroup: string) => {
+  switch (ageGroup) {
+    case "U7": return { teamSize: "4v4 or 6v6", contact: "Tag only - no contact", ... }
+    case "U8": return { teamSize: "4v4 or 6v6", contact: "Tag only - no contact", ... }
+    // ... U9-U18 rules
+  }
+}
 ```
 
-**Note:** In development, use `npm start` to run the full application (Express backend + Vite frontend integration). The server runs on port 5000.
+**Update process:** Annually review RFU Regulation 15 documentation (published June/July) and update the switch statement.
 
-### Database Operations
-```bash
-# Drizzle ORM with PostgreSQL via Neon Serverless
-# Schema location: shared/schema.ts
-# Config: drizzle.config.ts
-# Requires DATABASE_URL environment variable
-```
+**Alternative considered:** Database-driven rules - rejected as over-engineering for annually-updated static data.
 
-## Architecture Overview
+### Decision 4: Custom Markdown Parser for AI Responses
 
-### Project Structure
-```
-trojans-coaching-assistant/
-├── client/               # React frontend
-│   └── src/
-│       ├── components/   # UI components (Radix UI + Tailwind)
-│       ├── pages/        # Page-level components
-│       ├── lib/          # Utilities and helpers
-│       └── App.tsx       # Main application with AI integration
-├── server/               # Express backend
-│   ├── index.ts          # Server entry point (port 5000)
-│   ├── routes.ts         # API route definitions
-│   ├── storage.ts        # Database storage interface
-│   └── vite.ts           # Vite dev server integration
-└── shared/               # Shared TypeScript schemas
-    └── schema.ts         # Drizzle + Zod schemas
-```
+**What:** `lib/session-parser.ts` parses Claude's markdown responses into structured `ActivitySection[]` objects.
 
-### Key Architectural Patterns
+**Why:**
+- **Consistent UI** - AI responses vary in structure, parser normalizes them
+- **Better UX** - Collapsible sections, individual copy-to-clipboard, duration badges
+- **Extensibility** - Can add features like "regenerate this section" in future
+- **Error handling** - Fallback to single section if parsing fails (graceful degradation)
 
-**Monorepo with Unified Server:**
-- Single Express server serves both API routes (`/api/*`) and frontend (via Vite)
-- Development: Vite dev middleware integrated with Express (server/vite.ts)
-- Production: Static assets served from `dist/public`
-- Always runs on port 5000 (configurable via PORT env var)
+**How it works:**
+1. Takes raw markdown string from Claude API
+2. Detects activity boundaries (headers, numbered lists, keywords like "Warm-up", "Cool Down")
+3. Extracts durations from patterns like "(10 minutes)", "Duration: 15 min"
+4. Nests subsections under main activities
+5. Returns array of structured activity objects
 
-**Path Aliases (vite.config.ts):**
-- `@/` → `client/src/`
-- `@shared/` → `shared/`
-- `@assets/` → `attached_assets/`
+**Trade-offs:**
+- Parser logic is complex (~200 lines)
+- Brittle to unexpected AI response formats (mitigated by fallback logic)
+- But UX improvements justify the complexity
 
-**AI Integration (Backend Proxy Pattern):**
-- Backend proxy route at `/api/generate-session` (server/routes.ts) handles all Anthropic API requests
-- API key stored securely in server environment variable (`ANTHROPIC_API_KEY`)
-- Frontend makes POST requests to backend proxy (client/src/App.tsx)
-- Backend proxies requests to Anthropic Claude API with server-side API key
-- Uses Claude Sonnet 4.5 model (`claude-sonnet-4-20250514`)
-- **Benefits:** Enhanced security (API key never exposed to browser), centralized rate limiting, comprehensive request logging
-- **Client-side API key management:** The application still includes `lib/api-key-storage.ts` and `components/ApiKeyModal.tsx` for fallback API key management (stored in localStorage). These are used when `ANTHROPIC_API_KEY` is not configured server-side.
+---
 
-**Database (Currently Minimal Usage):**
-- Schema defined in `shared/schema.ts` using Drizzle ORM
-- Storage interface in `server/storage.ts` with in-memory implementation (`MemStorage`)
-- Currently implements basic user CRUD scaffolding (not actively used in the application)
-- Database integration is set up but minimal - primarily prepared for future features
+## 🏉 Coaching Frameworks Embedded in Prompts
 
-## Critical Domain Logic
+### Trojans Coaching Habits (The 5 Pillars)
 
-### RFU Regulation 15 Compliance
+All session plans must demonstrate these habits (embedded in `App.tsx:275`):
 
-The core business logic is RFU Regulation 15 age-grade rules, defined in `client/src/App.tsx:66` in the `getRegulation15Rules()` function. These rules are **non-negotiable** and must be strictly enforced:
+1. **Shared Purpose** - Clear session objective aligned to player development
+2. **Progression** - Activities build on each other using STEP principles (Space, Task, Equipment, People)
+3. **Praise** - Coaching dialogue includes specific, positive feedback
+4. **Review** - Session includes reflection questions and key learning points
+5. **Choice** - Players given decision-making opportunities within activities
 
-**Age Group Restrictions:**
-- U6: Training only, no matches
-- U7-U8: Tag rugby, no contact
-- U9: Transitional contact (tackle including hold)
-- U10+: Progressive contact rugby with specific limitations per age
+**Why hardcoded:** These represent Trojans RFC's coaching philosophy and must appear in every session regardless of age group or focus area.
 
-**Key Validation Points:**
-- Team sizes (4v4 for U7 → 15v15 for U14+)
-- Contact levels (no contact → tackle → ruck/maul → full contact)
-- Match durations and maximum play time per day
-- Scrum configurations (none → 3-player → 8-player)
-- Tackle height restrictions (below sternum for youth)
+### TREDS Values (Trojans RFC Ethos)
 
-When modifying age group logic, **always reference the actual RFU Regulation 15 documentation**. The rules are updated annually, and the current implementation follows the 2025-26 season rules.
+Every session plan reinforces:
+- **T**eamwork - Activities emphasize collaboration
+- **R**espect - For opponents, coaches, officials
+- **E**njoyment - Sessions must be fun and engaging
+- **D**iscipline - Structure, organization, listening skills
+- **S**portsmanship - Fair play and positive attitudes
 
-### Trojans Coaching Framework
+**How they're embedded:** The AI prompt instructs Claude to weave these values into coaching points and activity design.
 
-All session plans must incorporate:
-- **TREDS Values:** Teamwork, Respect, Enjoyment, Discipline, Sportsmanship
-- **Trojans Coaching Habits:** Shared Purpose, Progression, Praise, Review, Choice
-- **The Trojans Player:** Development of Behaviours, Skills, and Knowledge
-- **APES Sessions:** Active, Purposeful, Enjoyable, Safe
+### RFU Regulation 15 Compliance Requirements
 
-This framework is embedded in the AI prompt at `client/src/App.tsx:275` (in the `getCoachingAdvice()` function).
+**Critical:** These are **legal safety requirements**, not suggestions.
 
-### Session Generation Flow
+**Key rules by age group:**
 
-1. User inputs coaching challenge and session parameters
-2. Application validates RFU Regulation 15 rules for selected age group
-3. Constructs comprehensive prompt with:
-   - Coaching challenge and session parameters
-   - Age-specific RFU rules
-   - Trojans framework requirements
-   - Coaching method (Game/Skill Zone, Freeze Frame, Block Practice, Decision Making)
-4. Frontend sends prompt to backend proxy endpoint `/api/generate-session`
-5. Backend proxy authenticates with Anthropic API using server-side `ANTHROPIC_API_KEY`
-6. Backend forwards request to Claude Sonnet API and returns response to frontend
-7. **Frontend processes response with structured parsing:**
-   - `lib/session-parser.ts` parses markdown into structured `ActivitySection[]` objects
-   - Extracts activity titles, durations, content, and nested subsections
-   - Detects common patterns: numbered lists, markdown headers, activity keywords
-   - Fallback to single section if parsing fails
-8. **Frontend displays structured session plan:**
-   - `SessionPlan.tsx` component renders parsed activities in Radix UI Accordion
-   - Each activity card shows numbered indicator, title, duration badge
-   - Collapsible sections with individual copy-to-clipboard buttons
-   - Full plan copy button at top and bottom
-9. **WhatsApp summary generation:**
-   - Separate API call generates parent-friendly summary (150-200 words)
-   - Includes session focus, key skills, equipment reminders
-   - Copy-to-clipboard functionality with toast confirmation
-10. **Feedback system:** Thumbs up/down for session quality tracking
+| Age | Team Size | Contact Level | Scrum | Match Duration |
+|-----|-----------|---------------|-------|----------------|
+| U6 | 4v4 | None (training only) | None | No matches |
+| U7-U8 | 4v4/6v6 | Tag only | None | 10 min halves |
+| U9 | 7v7 | Tackle + hold | 3-player | 15 min halves |
+| U10 | 8v8 | Tackle + 1 support | 3-player | 20 min halves |
+| U11 | 9v9 | Tackle + 2 support | 3-player | 25 min halves |
+| U12 | 12v12 | Full breakdown | 8-player | 25 min halves |
+| U13+ | 15v15 | Full contact (restricted) | 8-player | 30-35 min halves |
 
-## UI Component Library
+**Contact level restrictions:**
+- **No contact:** Tag belts only, no tackling
+- **Tackle + hold:** Ball carrier can be held and brought to ground, no ruck/maul
+- **Tackle + support:** Rucking allowed with limited support players
+- **Full breakdown:** Ruck/maul with restrictions (e.g., no "flying wedge")
 
-The project uses **Radix UI primitives** with **Tailwind CSS** styling. All UI components are in `client/src/components/ui/` and follow a consistent pattern:
+**Why this matters:** RFU Regulation 15 violations can result in insurance invalidation and coach suspensions. **The application must never generate non-compliant sessions.**
 
-- Based on Radix UI for accessibility
-- Styled with Tailwind utility classes
-- Configured via `components.json`
-- Dark mode support via `next-themes` (theme-provider.tsx)
-- Class variance patterns using `class-variance-authority`
+### APES Sessions Framework
 
-### Design System
+All sessions must be:
+- **A**ctive - Minimize standing/waiting time (target: 80% active time)
+- **P**urposeful - Every activity linked to clear learning objective
+- **E**njoyable - Fun, varied, game-based where possible
+- **S**afe - Age-appropriate contact, proper progressions, risk management
 
-Refer to `design_guidelines.md` for complete design specifications:
-- Color palette: Rugby pitch green primary (142 71% 45%), professional blue secondary
-- Typography: Inter font family
-- Spacing: Tailwind units (2, 4, 6, 8, 12, 16)
-- Layout: Max-width 7xl containers, responsive grid patterns
+---
 
-**Important:** All new components must support both light and dark modes.
+## ⚠️ CRITICAL FILES - Change with Extreme Care
 
-## Common Development Patterns
+### 🚨 `client/src/App.tsx:66` - RFU Regulation 15 Rules Function
 
-### Adding New UI Components
-1. Create component in `client/src/components/ui/`
-2. Follow Radix UI + Tailwind pattern from existing components
-3. Export from component file
-4. Include dark mode styles using HSL color variables
+**Location:** `getRegulation15Rules(ageGroup: string)`
 
-### Modifying AI Prompts
-Location: `client/src/App.tsx:275` in the `getCoachingAdvice()` function
+**Why critical:** Contains legally-mandated safety requirements. Errors here could result in unsafe training sessions.
 
-When modifying:
-1. Ensure RFU Regulation 15 rules are accurately represented
-2. Test across multiple age groups (especially U7-U8 tag, U9 transitional, U10+ contact)
-3. Verify session structure and timing allocations
-4. Include coaching dialogue examples with player names
+**Before modifying:**
+1. Consult official RFU Regulation 15 documentation (published annually)
+2. Cross-reference with current Trojans RFC age-grade guidelines
+3. Test across ALL age groups (U6-U18) to ensure no regressions
+4. Have a qualified Level 2+ coach review changes
 
-### Adding API Routes
-1. Define route in `server/routes.ts` (currently minimal implementation)
-2. Use `/api` prefix for all backend routes
-3. Update shared types in `shared/schema.ts`
-4. Add corresponding frontend hooks if needed
+**Common mistakes to avoid:**
+- Mixing up U7/U8 rules (both tag but different match durations)
+- Incorrect scrum player counts (3-player for U9-U11, 8-player for U12+)
+- Missing tackle height restrictions (below sternum for youth)
 
-### Database Schema Changes
-1. Modify `shared/schema.ts` with Drizzle schema definitions
-2. Validation schemas automatically generated via `drizzle-zod`
-3. Run migrations (migration files stored in `./migrations`)
-4. Update storage interface in `server/storage.ts`
+### 🚨 `client/src/App.tsx:275` - Claude API Prompt Structure
 
-## Environment Variables
+**Location:** `getCoachingAdvice()` function - constructs the AI prompt
 
-Required:
-- `ANTHROPIC_API_KEY` - **Server-side only** - Anthropic API key for Claude access via backend proxy (server/routes.ts:12)
-- `DATABASE_URL` - PostgreSQL connection string for Neon Serverless
-- `PORT` - Server port (defaults to 5000, other ports are firewalled)
+**Why critical:** This is the "coaching brain" of the application. The prompt structure determines session quality, compliance, and usefulness.
 
-**Security Note:** API key is never exposed to the frontend. All AI requests are proxied through the Express backend to keep credentials secure.
+**Current prompt sections:**
+1. **Role definition** - "You are an expert rugby coach at Trojans RFC..."
+2. **Session parameters** - Age group, player count, duration, focus area
+3. **RFU Regulation 15 rules** - Injected from `getRegulation15Rules()`
+4. **Trojans Framework** - TREDS, coaching habits, APES
+5. **Coaching methodology** - Game Zone/Skill Zone/Freeze Frame/Block Practice/Decision Making
+6. **Output format** - Markdown structure with specific sections
+7. **Safety emphasis** - Age-appropriate contact progressions
+8. **Resource suggestions** - KYBO videos, RFU Kids First resources
 
-## Testing & Deployment
+**Before modifying:**
+1. Test changes with multiple age groups (especially U7/U8 tag and U9 transitional)
+2. Verify all output sections are still present (equipment, safety brief, etc.)
+3. Check that RFU rules are accurately represented in prompt
+4. Ensure coaching dialogue examples include player names (engagement technique)
+5. Test with various coaching challenges (skills, tactics, behavior)
 
-**Current Status:** Development/prototype stage, primarily tested on Replit
+**Common mistakes:**
+- Removing RFU rules from prompt (results in non-compliant sessions)
+- Changing output format without updating `session-parser.ts`
+- Over-constraining the AI (reduces creativity and adaptability)
+- Under-constraining the AI (results in generic, non-Trojans-specific sessions)
 
-**Claude AI Artifact Access:** Development version available at https://claude.ai/public/artifacts/b1063080-9538-4ace-9ab3-76ca48ace623 (provides free API access during testing)
+### 🚨 `server/routes.ts` - API Proxy Endpoint
 
-**Production Deployment:** TBD - requires environment configuration for API keys and database
+**Location:** `/api/generate-session` route handler
 
-## Rugby-Specific Terminology
+**Why critical:** Handles all AI requests, contains API key, logging, error handling.
 
-When working with rugby content:
-- Use correct RFU terminology (e.g., "tackle" vs "hold", "ruck" vs "breakdown")
-- Safety is paramount - all activities must be age-appropriate
-- Follow World Rugby coaching conventions
-- Reference "Keep Your Boots On" (KYBO) video series for resources
+**Security requirements:**
+- API key must NEVER be logged or returned to frontend
+- Request validation must prevent oversized prompts (cost control)
+- Error messages must not expose internal implementation details
 
-## Known Issues & Roadmap
+**Before modifying:**
+1. Test with various prompt sizes and edge cases
+2. Verify API key is still server-side only
+3. Check that logging doesn't expose sensitive data
+4. Ensure error handling is graceful and user-friendly
 
-### Technical Debt
-- **Dual API key management:** The application supports both server-side (`ANTHROPIC_API_KEY` env var) and client-side (localStorage) API key storage. This dual approach adds complexity. Consider standardizing on server-side only for production deployments.
+---
 
-### Recently Completed (v2.1 - November 2025)
-- [x] Structured session plan parser and accordion display (#4 - partial)
-- [x] Toast notification system (#4 - partial)
-- [x] Enhanced loading states with skeleton components (#4 - partial)
-- [x] Form layout reorganization with better hierarchy (#4 - partial)
-- [x] Quick-start template library
-- [x] Mobile responsive optimizations (#4 - partial)
-- [x] Color-coded RFU Regulation 15 rules display
-- [x] Individual section copy-to-clipboard
-- [x] Backend API proxy with comprehensive logging
+## 🛠️ Common Development Tasks
 
-### In Progress
-- [ ] Additional mobile responsive refinements (#4)
+### Task 1: Adding a New Age Group
 
-### Planned Features
-See GitHub Issues for planned features:
-- [ ] Individual section regeneration (#3)
-- [ ] Trojans helmet logo (#2)
-- [ ] Session history/save feature
-- [ ] Export to PDF
-- [ ] Multi-week programme planning
-- [ ] User accounts and saved preferences
+**Scenario:** RFU introduces a new age band (e.g., U19) or splits an existing one.
 
-## Important Files Reference
+**Steps:**
+
+1. **Update RFU rules constant** (`client/src/App.tsx:66`)
+   ```typescript
+   case "U19":
+     return {
+       ageGroup: "U19",
+       teamSize: "15v15",
+       matchDuration: "40 minute halves",
+       contact: "Full adult contact rules",
+       scrums: "Full scrums (8-player)",
+       ruck: "Full breakdown",
+       maul: "Full maul allowed",
+       kicking: "All kicks allowed",
+       tackleHeight: "Full contact (chest and below)",
+       maxPlayTime: "160 minutes per day"
+     }
+   ```
+
+2. **Update age group dropdown** (`client/src/App.tsx` - search for `ageGroups` array)
+   ```typescript
+   const ageGroups = ["U6", "U7", "U8", ..., "U18", "U19"]
+   ```
+
+3. **Test the new age group:**
+   - Generate a session for the new age group
+   - Verify RFU rules display correctly in the UI
+   - Check that Claude generates age-appropriate content
+   - Ensure contact level color-coding is correct (green/yellow/orange)
+
+4. **Update documentation:**
+   - `README.md` - RFU compliance table
+   - This file (`CLAUDE.md`) - Age group rules table
+   - `design_guidelines.md` - If visual changes needed
+
+### Task 2: Modifying Trojans Coaching Framework
+
+**Scenario:** Club updates coaching habits or adds new TREDS values.
+
+**Steps:**
+
+1. **Update the prompt** (`client/src/App.tsx:275` in `getCoachingAdvice()`)
+
+   Locate the section:
+   ```typescript
+   **Trojans Coaching Framework:**
+   - TREDS Values: Teamwork, Respect, Enjoyment, Discipline, Sportsmanship
+   - Coaching Habits: Shared Purpose, Progression, Praise, Review, Choice
+   ```
+
+   Modify to reflect new framework.
+
+2. **Update UI display** (if framework is shown to user)
+   - Search for "TREDS" across codebase to find all references
+   - Update any UI components that display framework
+
+3. **Test impact on session generation:**
+   - Generate sessions for multiple age groups
+   - Verify new framework elements appear in AI output
+   - Check that session quality/structure hasn't degraded
+
+4. **Update documentation:**
+   - `README.md` - Trojans Coaching Framework section
+   - This file - Coaching Frameworks section
+
+### Task 3: Updating Claude API Integration
+
+**Scenario:** Anthropic releases Claude 4.0 or changes API format.
+
+**Steps:**
+
+1. **Check API compatibility:**
+   - Review Anthropic API changelog
+   - Test new model/API with current integration
+   - Verify pricing changes don't break budget
+
+2. **Update model reference** (`server/routes.ts`)
+   ```typescript
+   model: "claude-sonnet-4-20250514" // Update to new model ID
+   ```
+
+3. **Update API call structure if needed:**
+   - Message format changes
+   - New parameters (temperature, top_p, etc.)
+   - Response structure changes
+
+4. **Update error handling:**
+   - New error codes or formats
+   - Rate limiting changes
+   - Token limit changes
+
+5. **Test thoroughly:**
+   - Session generation across all age groups
+   - Error scenarios (invalid prompts, API errors)
+   - Cost monitoring (new model pricing)
+   - Response quality (compare to previous model)
+
+6. **Update documentation:**
+   - `README.md` - Tech stack section
+   - `.env.example` - If new environment variables needed
+   - This file - AI Integration section
+
+### Task 4: Adding a New Coaching Methodology
+
+**Scenario:** Want to add "EDGE" (Explain, Demonstrate, Guide, Enable) to existing methodologies.
+
+**Steps:**
+
+1. **Add to methodology dropdown** (`client/src/App.tsx`)
+   ```typescript
+   const methodologies = [
+     "Game Zone / Skill Zone",
+     "Freeze Frame",
+     "Block Practice",
+     "Decision Making Activities",
+     "EDGE (Explain, Demonstrate, Guide, Enable)" // New
+   ]
+   ```
+
+2. **Update AI prompt** (`client/src/App.tsx:275`)
+
+   Add EDGE explanation to the methodology section:
+   ```typescript
+   if (method === "EDGE (Explain, Demonstrate, Guide, Enable)") {
+     methodPrompt = `
+       Use the EDGE coaching method:
+       - Explain: Coach clearly explains the skill/concept
+       - Demonstrate: Coach or skilled player demonstrates
+       - Guide: Players practice with coach guidance and feedback
+       - Enable: Players perform independently in game-like scenarios
+     `
+   }
+   ```
+
+3. **Test methodology:**
+   - Generate sessions using EDGE for various age groups
+   - Verify AI follows EDGE structure
+   - Check that output quality matches other methodologies
+
+4. **Update templates** (`client/src/lib/templates.ts`)
+   - Consider adding example challenges that work well with EDGE
+
+### Task 5: Fixing RFU Regulation 15 Rules (Annual Update)
+
+**Scenario:** RFU publishes updated Regulation 15 for 2026-27 season.
+
+**Steps:**
+
+1. **Obtain official documentation:**
+   - Download from RFU website (usually published June/July)
+   - Cross-reference with RFU age-grade rugby handbook
+   - Note all changes from previous season
+
+2. **Update rules systematically:**
+   ```typescript
+   // client/src/App.tsx:66
+   const getRegulation15Rules = (ageGroup: string) => {
+     switch (ageGroup) {
+       case "U10": // Example: scrum rules changed
+         return {
+           scrums: "3-player uncontested scrums (NEW: contested allowed with trained coaches)",
+           // Update all changed fields
+         }
+     }
+   }
+   ```
+
+3. **Update color-coding if contact levels change:**
+   - Check `client/src/App.tsx` where contact level determines alert color
+   - Green (no contact), Yellow (limited), Orange (full contact)
+
+4. **Test ALL age groups:**
+   - U6, U7, U8, U9, U10, U11, U12, U13, U14, U15, U16, U17, U18
+   - Verify rules display correctly in UI
+   - Generate sessions and check AI respects new rules
+
+5. **Document changes:**
+   - Add note to README.md: "Updated for RFU Regulation 15 2026-27 season"
+   - Update this file's rules table
+   - Consider adding changelog entry
+
+---
+
+## 🐛 Known Technical Debt to Address
+
+### 1. Dual API Key Management System
+
+**Issue:** Application supports both server-side (`ANTHROPIC_API_KEY` env var) and client-side (localStorage) API key storage.
+
+**Why it exists:** Originally built with client-side API calls, then added backend proxy for security. Client-side fallback remained for backward compatibility.
+
+**Current state:**
+- `server/routes.ts` - Backend proxy (primary, secure method)
+- `lib/api-key-storage.ts` + `components/ApiKeyModal.tsx` - Client-side fallback (deprecated)
+
+**Recommended fix:**
+1. Remove `lib/api-key-storage.ts` and `ApiKeyModal.tsx`
+2. Remove client-side API key logic from `App.tsx`
+3. Standardize on backend proxy only
+4. Update documentation to remove client-side key references
+
+**Risk:** Low - backend proxy has been stable in production. Client-side code is legacy.
+
+**Effort:** Medium - requires testing to ensure no regressions.
+
+### 2. 32 Unused Radix UI Components (~3,500 lines)
+
+**Issue:** Project includes full Radix UI component library but only uses ~15 components.
+
+**Unused bloat:**
+- `sidebar.tsx` (727 lines) - Never imported
+- `chart.tsx` (365 lines) - Never imported
+- `carousel.tsx`, `menubar.tsx`, `form.tsx`, etc. - 29 more unused files
+
+**Current state:** All files present in `client/src/components/ui/`
+
+**Recommended fix:**
+1. Identify components used in production
+2. Delete unused components (save ~3,500 lines of code)
+3. Verify build size reduction
+
+**Risk:** Low - unused components have zero imports.
+
+**Effort:** Low - simple deletion with build verification.
+
+**Trade-off:** Keeping components provides "ready to use" library for future features. Deleting improves build times and reduces cognitive overhead.
+
+### 3. Session History Stored in localStorage Only
+
+**Issue:** Sessions saved to browser localStorage are lost if user clears browser data or switches devices.
+
+**Current state:** `lib/session-storage.ts` uses `localStorage.setItem()`
+
+**Recommended fix:** **Next major phase - Supabase backend integration**
+1. Replace localStorage with Supabase database
+2. Add user authentication (Supabase Auth)
+3. Cloud-based session storage with sync across devices
+4. Enable session sharing between coaches
+
+**Risk:** Medium - requires significant architecture changes.
+
+**Effort:** High - full backend integration project.
+
+### 4. WhatsApp Summaries Cannot Be Regenerated Independently
+
+**Issue:** WhatsApp summary is generated once during session creation. If user wants a different summary, they must regenerate the entire session.
+
+**Current state:** Single API call generates both full session and WhatsApp summary.
+
+**Recommended fix:**
+1. Add "Regenerate WhatsApp Summary" button
+2. Separate API call with different prompt (summary-focused)
+3. Preserve full session plan while updating summary only
+
+**Risk:** Low - additive feature, doesn't affect existing functionality.
+
+**Effort:** Medium - requires UI changes and new API endpoint.
+
+### 5. PDF Export Uses Client-Side Rendering (Performance Issues)
+
+**Issue:** Large sessions with many activities can cause browser slowdown during PDF generation.
+
+**Current state:** `html2canvas` + `jspdf` render in browser (client-side).
+
+**Recommended fix:**
+1. Move PDF generation to serverless function
+2. Use server-side rendering (Puppeteer or similar)
+3. Return PDF blob to frontend for download
+
+**Risk:** Medium - requires new backend infrastructure.
+
+**Effort:** High - serverless PDF generation is complex.
+
+**Alternative:** Keep client-side but optimize (reduce image quality, lazy rendering).
+
+---
+
+## 🗺️ Next Planned Features
+
+### Phase 1: Supabase Backend Integration (Q1 2026)
+
+**Primary goals:**
+- Replace localStorage with Supabase PostgreSQL database
+- Add user authentication (Supabase Auth)
+- Cloud-based session storage accessible from any device
+- Session sharing between coaches
+
+**GitHub Issues:**
+- See project Issues for detailed breakdown
+
+**Technical approach:**
+1. Set up Supabase project
+2. Design session schema (sessions, users, shared_sessions tables)
+3. Implement Supabase Auth (email/password or OAuth)
+4. Migrate `session-storage.ts` to Supabase client
+5. Add session sharing UI (share by email, generate link)
+6. Migrate existing localStorage sessions (one-time migration tool)
+
+**Estimated effort:** 2-3 weeks (depending on auth complexity)
+
+### Phase 2: Session Management Enhancements
+
+**Features:**
+- Individual section regeneration ([#3](https://github.com/footnote42/trojans-coaching-assistant/issues/3))
+- Multi-week programme planning
+- Equipment inventory tracking
+- Session templates based on saved sessions
+
+### Phase 3: Analytics & Insights
+
+**Features:**
+- Session feedback analytics dashboard
+- Most popular coaching challenges
+- Age group usage statistics
+- Activity effectiveness tracking (based on thumbs up/down)
+
+---
+
+## 📁 Important Files Reference
 
 ### Core Application Files
-- `client/src/App.tsx` - Main application component with form, session generation, RFU rules (App.tsx:77)
-- `server/routes.ts` - API routes including `/api/generate-session` proxy endpoint for Anthropic API
-- `server/index.ts` - Express server setup and middleware (port 5000)
-- `shared/schema.ts` - Database and validation schemas (Drizzle + Zod)
 
-### UI Components (v2.1)
-- `client/src/components/coaching/SessionPlan.tsx` - Structured accordion display with copy-to-clipboard
-- `client/src/components/coaching/SessionPlanSkeleton.tsx` - Loading state component
-- `client/src/components/coaching/TemplateLibrary.tsx` - Quick-start template grid
-- `client/src/components/ui/toaster.tsx` - Toast notification system
-- `client/src/components/ui/card.tsx` - Radix UI Card components
-- `client/src/components/ui/accordion.tsx` - Radix UI Accordion components
-- `client/src/components/ui/alert.tsx` - Alert component for RFU rules display
-- `client/src/components/ui/badge.tsx` - Badge component for duration indicators
+**`client/src/App.tsx`** (989 lines) - Main application component
+- Line 66: `getRegulation15Rules()` - **CRITICAL** RFU rules function
+- Line 275: `getCoachingAdvice()` - **CRITICAL** AI prompt construction
+- Session generation logic, form handling, state management
 
-### Utilities & Libraries
-- `client/src/lib/session-parser.ts` - Markdown parser for structuring AI responses
-- `client/src/lib/templates.ts` - Quick-start coaching challenge templates
-- `client/src/lib/api-key-storage.ts` - Fallback API key management (localStorage)
-- `client/src/hooks/use-toast.ts` - Toast notification hook
+**`server/routes.ts`** - API proxy endpoint
+- Line 12: `/api/generate-session` route handler
+- Anthropic API integration with comprehensive logging
+- Server-side API key storage and validation
+
+**`server/index.ts`** - Express server entry point
+- Port 5000 (configurable via PORT env var)
+- Vite dev middleware integration
+- CORS configuration
+
+**`shared/schema.ts`** - Database schemas (Drizzle ORM + Zod)
+- User schema (minimal, prepared for future)
+- Validation schemas for API requests
+
+### Session Processing
+
+**`client/src/lib/session-parser.ts`** - Markdown parser
+- Parses Claude's markdown responses into structured `ActivitySection[]`
+- Extracts activity titles, durations, content
+- Handles nested subsections and fallback logic
+
+**`client/src/components/coaching/SessionPlan.tsx`** - Session display
+- Radix UI Accordion with collapsible sections
+- Individual copy-to-clipboard for each activity
+- Duration badges and numbered indicators
+
+**`client/src/components/coaching/SessionPlanSkeleton.tsx`** - Loading state
+- Multi-stage loading indicators
+- Estimated completion time display
+- Animated placeholders
+
+### UI Components
+
+**`client/src/components/coaching/TemplateLibrary.tsx`** - Quick-start templates
+- Pre-built coaching challenges
+- Auto-fill functionality
+
+**`client/src/components/ui/toaster.tsx`** - Toast notifications
+- 3-message limit, 3-second auto-dismiss
+- Success/error/info variants
+
+### Storage & Utilities
+
+**`client/src/lib/session-storage.ts`** - localStorage session management
+- Save/load/delete sessions from localStorage
+- **Technical debt:** Replace with Supabase in next phase
+
+**`client/src/lib/templates.ts`** - Coaching challenge templates
+- 4 pre-built templates (U10-U14)
+- Easy to add more templates
+
+**`client/src/lib/api-key-storage.ts`** - Legacy client-side API key storage
+- **Technical debt:** Remove once backend proxy is proven stable
 
 ### Configuration
-- `vite.config.ts` - Build configuration and path aliases (@/, @shared/, @assets/)
-- `design_guidelines.md` - Complete design system specifications
-- `.github/copilot-instructions.md` - AI development guidelines (incorporated in this file)
+
+**`vite.config.ts`** - Vite build configuration
+- Path aliases: `@/` → `client/src/`, `@shared/` → `shared/`
+- React plugin configuration
+- Build optimizations
+
+**`vercel.json`** - Vercel deployment configuration
+- Build command: `npm run build`
+- Output directory: `dist/public`
+- API route rewrites for `/api/*`
+
+**`tailwind.config.ts`** - Tailwind CSS configuration
+- Custom color palette (rugby green, professional blue)
+- Custom spacing, typography, animations
+
+**`.env.example`** - Environment variables template
+- `ANTHROPIC_API_KEY` (required)
+- `DATABASE_URL` (optional, for future)
+- `PORT` (optional, default 5000)
+
+---
+
+## 🎓 Rugby-Specific Terminology Reference
+
+When working with rugby coaching content, use these correct terms:
+
+**Contact Levels:**
+- "Tag rugby" (not "flag rugby")
+- "Tackle" (bringing ball carrier to ground)
+- "Hold" (grasping without bringing to ground)
+- "Ruck" (contest for ball on ground)
+- "Maul" (contest with ball carrier still standing)
+- "Breakdown" (general term for ruck/maul situations)
+
+**Coaching Methods:**
+- "Game Zone / Skill Zone" (not "drills and scrimmages")
+- "Freeze Frame" (stopping play to highlight teaching points)
+- "STEP Progression" (Space, Task, Equipment, People modifications)
+
+**Safety Terminology:**
+- "Tackle height" (where contact is made, e.g., "below sternum")
+- "Fly-hack" (kicking ball as it bounces - restricted for younger ages)
+- "Uncontested scrum" (no pushing, just formation)
+- "Contested scrum" (full pushing, requires trained coaches)
+
+**Age Grades:**
+- Always use "U" prefix (U7, not "Under-7" or "7s")
+- "Mini rugby" = U6-U12
+- "Youth rugby" = U13-U18
+
+**Resources:**
+- "Keep Your Boots On (KYBO)" - RFU video series
+- "RFU Kids First" - Safeguarding framework
+- "World Rugby" (not "International Rugby Board" - old name)
+
+---
+
+## 📚 Additional Documentation
+
+**For detailed design specifications:** See `design_guidelines.md`
+**For deployment procedures:** See `VERCEL-DEPLOYMENT.md`
+**For API testing:** See `API-TESTING.md`
+**For project roadmap:** See `README.md` and GitHub Issues
+
+---
+
+**Last Updated:** November 2025 by Wayne Ellis (Trojans RFC)
+**Next Review:** June 2026 (RFU Regulation 15 annual update)

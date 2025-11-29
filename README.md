@@ -1,244 +1,276 @@
 # 🏉 Trojans Coaching Assistant
 
-AI-powered rugby coaching session planner for Trojans RFC - RFU Regulation 15 compliant.
+AI-powered rugby training session planner for Trojans RFC that generates RFU Regulation 15 compliant coaching plans using Claude Sonnet 4.5.
+
+**🚀 Live App:** https://trojans-coaching-assistant.vercel.app/
+
+---
 
 ## Overview
 
-The Trojans Coaching Assistant helps rugby coaches at Trojans RFC quickly generate comprehensive, age-appropriate training session plans that follow the club's coaching framework and comply with RFU Regulation 15.
+The Trojans Coaching Assistant helps rugby coaches quickly generate comprehensive, age-appropriate training sessions that follow the club's coaching framework and comply with RFU Regulation 15 age-grade regulations.
 
-## Recent Updates (v2.1 - November 2025)
+**Built for:** Trojans RFC volunteer coaches
+**Status:** ✅ Production-ready (v2.1)
 
-**UI/UX Improvements - Phase 1 Complete:**
+---
 
-✅ **Structured Session Plan Display** - Session plans now display in collapsible accordion sections with:
-- Individual activity cards with duration badges
-- Copy-to-clipboard for individual sections or full plan
-- Numbered activity indicators
-- Subsection organization for complex activities
+## ✨ Current Features
 
-✅ **Modern Toast Notifications** - Replaced browser alerts with polished toast notifications for:
-- Template loading confirmations
-- Copy-to-clipboard feedback
-- Error messages with user-friendly descriptions
+### Core Functionality
+- ✅ **RFU Regulation 15 Compliance** - Automatic age group validation (U6-U18) with correct team sizes, contact levels, and match durations
+- ✅ **AI-Powered Session Generation** - Claude Sonnet 4.5 creates complete training plans tailored to your coaching challenge
+- ✅ **Trojans Framework Integration** - Embeds TREDS values, coaching habits, and the Trojans Player development model
+- ✅ **Multiple Coaching Methodologies** - Game Zone/Skill Zone, Freeze Frame, Block Practice, Decision Making Activities
 
-✅ **Enhanced Loading States** - Professional skeleton loading with:
-- Multi-stage loading indicators
-- Estimated completion time display
-- Animated placeholders for session structure
+### Session Planning
+- ✅ **Structured Session Display** - Collapsible accordion sections with individual copy-to-clipboard for each activity
+- ✅ **WhatsApp Parent Summaries** - Auto-generated parent-friendly session descriptions (150-200 words)
+- ✅ **PDF Export** - Download session plans as PDF documents
+- ✅ **Session Save/Load** - Save sessions to localStorage and reload them later
+- ✅ **Quick-Start Templates** - Pre-built coaching challenges for common scenarios (U10-U14)
 
-✅ **Improved Information Hierarchy** - Reorganized form layout with:
-- Dedicated "Your Coaching Challenge" card with prominent textarea
-- Separate "Session Details" card for players/coaches/duration
-- Collapsible "Advanced Settings" for age group, focus, and coaching method
-- Color-coded RFU Regulation 15 rules display (green/yellow/orange by contact level)
+### User Experience
+- ✅ **Professional Loading States** - Multi-stage loading indicators with estimated completion time
+- ✅ **Toast Notifications** - Modern feedback system for all user actions
+- ✅ **Mobile Responsive** - Touch-optimized with sticky generate button for mobile devices
+- ✅ **Color-Coded RFU Rules** - Visual indicators (green/yellow/orange) for contact level restrictions
+- ✅ **Feedback System** - Thumbs up/down tracking for session quality
 
-✅ **Quick Start Templates** - Pre-built coaching challenges for common scenarios:
-- Catch & Pass Skills (U10)
-- Safe Tackle Technique (U12)
-- Breakdown Skills (U14)
-- Creating Space in Attack (U11)
+---
 
-✅ **Mobile Optimizations** - Responsive design improvements:
-- Fixed sticky generate button for mobile devices
-- Touch-optimized button sizes (48px minimum)
-- Responsive grid layouts for all form sections
+## 🛠️ Tech Stack
 
-### Key Features
+**Frontend:**
+- React 18 + TypeScript
+- Tailwind CSS + Radix UI components
+- Vite (build tool)
 
-- ✅ **RFU Regulation 15 Compliant** - Automatically adjusts team sizes, contact levels, and match duration for each age group (U6-U18)
-- ✅ **Trojans Framework Integration** - Embeds club coaching habits, TREDS values, and the Trojans Player development model
-- ✅ **Multiple Coaching Methods** - Game Zone/Skill Zone, Freeze Frame, Block Practice, Decision Making Activities
-- ✅ **Age-Appropriate Activities** - Tag rugby for U7-U8, transitional contact for U9, full contact progressions for U10+
-- ✅ **STEP Principle Progressions** - Space, Task, Equipment, People variations built into every activity
-- ✅ **YouTube Resources** - Suggestions for Keep Your Boots On and RFU Kids First videos
-- ✅ **WhatsApp Summaries** - Auto-generated parent-friendly session descriptions
-- ✅ **Feedback System** - Track which session plans coaches find most useful
+**Backend:**
+- Express.js with backend proxy pattern
+- Claude Sonnet 4.5 API (Anthropic)
+- PostgreSQL + Drizzle ORM (minimal usage, prepared for future features)
 
-## Screenshots
+**Deployment:**
+- Vercel (production)
+- Serverless Edge Functions for API routes
 
-![Main Interface](images/main-interface.png)
-![Session Plan Example](images/session-plan-example.png)
-![Message to Parents](images/message-to-parents.png)
+---
 
-## Tech Stack
-
-- **Frontend:** React 18 + TypeScript
-- **UI Components:** Radix UI primitives (Accordion, Alert, Toast, Card, Badge)
-- **Styling:** Tailwind CSS with custom design system
-- **Icons:** Lucide React
-- **AI:** Claude Sonnet 4.5 (Anthropic API)
-- **Backend:** Express.js with backend proxy pattern for API security
-- **Build Tool:** Vite with HMR (Hot Module Replacement)
-- **Database:** Drizzle ORM + PostgreSQL (Neon Serverless) - minimal usage
-- **Deployment:** Replit (development) / TBD (production)
-
-## Getting Started
+## 🚀 Local Development Setup
 
 ### Prerequisites
-
 - Node.js 18+ and npm
 - Git
-- Anthropic API key (for deployment)
+- Anthropic API key ([get one here](https://console.anthropic.com/settings/keys))
 
-### Local Development
+### Installation
 
 1. **Clone the repository**
-```bash
+   ```bash
    git clone https://github.com/footnote42/trojans-coaching-assistant.git
    cd trojans-coaching-assistant
-```
+   ```
 
-2. **Navigate to client directory**
-```bash
-   cd client
-```
-
-3. **Install dependencies**
-```bash
+2. **Install dependencies**
+   ```bash
    npm install
-```
+   ```
 
-4. **Start development (two options)**
+3. **Set up environment variables**
 
-- Frontend-only (fast UI dev with Vite):
-```powershell
-cd client
-npm run dev
-```
-Opens the Vite dev server (default port `5173`). Use this when iterating only on React components or styles.
+   Copy `.env.example` to `.env` and add your API key:
+   ```bash
+   cp .env.example .env
+   ```
 
-- Full app (recommended for end-to-end testing — API proxy + Vite middleware):
-```powershell
-# from repository root
-npm start
-```
-This runs the Express server (`server/index.ts`) which integrates Vite in dev mode; it serves the API and the client together (default port `5000`). Use this to exercise `/api/generate` and server-side behavior.
+   Edit `.env` and add:
+   ```env
+   ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
+   ```
+
+4. **Start the development server**
+   ```bash
+   npm start
+   ```
+
+   This runs the Express server with integrated Vite middleware on port 5000.
+
+   Alternative (frontend-only, faster for UI iteration):
+   ```bash
+   npm run dev
+   ```
+   This runs the Vite dev server on port 5173 (API calls will fail without backend).
 
 5. **Open in browser**
+   - Full app: `http://localhost:5000`
+   - Frontend-only: `http://localhost:5173`
 
-- Frontend-only: `http://localhost:5173`
-- Full app (server): `http://localhost:5000`
+---
 
-### Note on API Access
+## 🌐 Deployment (Vercel)
 
-The Claude API integration requires an Anthropic API key. During development/testing, the application can be accessed via the [Claude.ai shared artifact link](https://claude.ai/public/artifacts/b1063080-9538-4ace-9ab3-76ca48ace623) which provides free API access.
+### Deploy to Vercel
 
-For production deployment with your own API key, environment variables need to be configured (documentation coming soon).
+1. **Install Vercel CLI** (optional)
+   ```bash
+   npm install -g vercel
+   ```
 
-### Developer Notes (env & safety)
+2. **Connect your project**
+   ```bash
+   vercel
+   ```
 
-- Server-side API key: set `ANTHROPIC_API_KEY` in your server environment. The backend proxy endpoint `/api/generate` (see `server/routes.ts`) uses this key — do not commit or expose it.
+3. **Configure environment variables**
 
-- Optional local dev key: `client/src/lib/api-key-storage.ts` will read `import.meta.env.VITE_ANTHROPIC_API_KEY` if present. This is only for development convenience; production uses the server proxy.
+   In Vercel dashboard (Project Settings > Environment Variables):
+   - `ANTHROPIC_API_KEY` - Your Anthropic API key
 
-- Database: if you enable DB features, set `DATABASE_URL` (Neon/Postgres) and follow `shared/schema.ts` for schema changes.
+   Add for all environments: Production, Preview, Development
 
-- Ports: `PORT` env var overrides the default `5000` used by the server.
+4. **Deploy**
+   ```bash
+   vercel --prod
+   ```
 
-## How It Works
+### Vercel Configuration
 
-1. **Select age group** (U6-U18) and session parameters
-2. **Describe your coaching challenge** (e.g., "Players struggle with support play in attack")
-3. **Generate session plan** - Claude creates a complete plan including:
-   - Session purpose aligned to Trojans Framework
-   - Equipment list
-   - Safety brief
-   - Progressive activities (warm-up, skill zones, game zones, cool down)
-   - Coaching organization notes
-   - Review questions
-   - Regulation 15 compliance check
-   - YouTube resource suggestions
-4. **Copy and use** - WhatsApp summary for parents, full plan for coaches
+The project includes `vercel.json` with:
+- Build command: `npm run build`
+- Output directory: `dist/public`
+- Framework detection: Vite
+- API route rewrites for `/api/*` endpoints
 
-## Current Application Status
+---
 
-**✅ Fully Functional Production-Ready Features:**
-- Complete session plan generation with AI-powered content
-- RFU Regulation 15 age-group compliance validation
-- Trojans coaching framework integration
-- Backend API proxy for secure API key management
-- Modern, responsive UI with mobile optimizations
-- Structured session plan display with collapsible sections
-- Quick-start template library
-- Toast notification system
-- Professional loading states
-- WhatsApp parent message generation
-- Copy-to-clipboard functionality
-- Feedback collection system
+## 📋 Environment Variables
 
-**Architecture Overview:**
-- **Monorepo structure** with unified Express server
-- **Backend proxy pattern** - API requests routed through `/api/generate-session` endpoint
-- **Secure API key management** - Server-side `ANTHROPIC_API_KEY` environment variable
-- **Frontend** - React 18 + TypeScript with Vite dev server integration
-- **UI Components** - Radix UI primitives with Tailwind CSS styling
-- **Session parsing** - Custom markdown parser (`lib/session-parser.ts`) structures AI responses
-- **State management** - React hooks with local state (no external state library needed)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | **Yes** | Server-side Anthropic API key for Claude Sonnet 4.5 |
+| `DATABASE_URL` | No | PostgreSQL connection string (for future features) |
+| `PORT` | No | Server port (default: 5000, ignored by Vercel) |
 
-**File Structure Highlights:**
-- `client/src/App.tsx` - Main application component with form and session generation
-- `client/src/components/coaching/SessionPlan.tsx` - Structured accordion display
-- `client/src/lib/session-parser.ts` - Parses AI markdown into structured sections
-- `client/src/lib/templates.ts` - Quick-start coaching challenge templates
-- `server/routes.ts` - API proxy endpoint for Anthropic API
-- `shared/schema.ts` - Database and validation schemas (minimal usage)
+**Security Note:** The API key is stored server-side only and never exposed to the browser. All AI requests are proxied through the Express backend at `/api/generate-session`.
 
-## RFU Regulation 15 Compliance
+---
 
-The assistant enforces correct rules for each age group:
+## 🏉 RFU Regulation 15 Compliance
 
-| Age Group | Format | Team Size | Contact Level |
-|-----------|--------|-----------|---------------|
-| U7-U8 | Tag Rugby | 4v4 / 6v6 | No contact |
-| U9 | Transitional Contact | 7v7 | Tackle including hold |
-| U10 | Contact Rugby | 8v8 | Full tackle, 1 support at breakdown |
-| U11 | Contact Rugby | 9v9 | Full tackle, 2 support at breakdown |
-| U12+ | Contact Rugby | 12v12 / 15v15 | Progressive full contact |
+The application enforces correct age-grade rules:
 
-## Trojans Coaching Framework
+| Age Group | Format | Team Size | Contact Level | Match Duration |
+|-----------|--------|-----------|---------------|----------------|
+| U6 | Training Only | 4v4 | No contact | No matches |
+| U7-U8 | Tag Rugby | 4v4 / 6v6 | No contact | 10 min halves |
+| U9 | Transitional Contact | 7v7 | Tackle including hold | 15 min halves |
+| U10 | Contact Rugby | 8v8 | Full tackle, 1 support | 20 min halves |
+| U11 | Contact Rugby | 9v9 | Full tackle, 2 support | 25 min halves |
+| U12 | Contact Rugby | 12v12 | Progressive full contact | 25 min halves |
+| U13-U18 | Contact Rugby | 15v15 | Full contact with restrictions | 30-35 min halves |
+
+---
+
+## 🎯 Trojans Coaching Framework
 
 All session plans incorporate:
 
-- **TREDS Values:** Teamwork, Respect, Enjoyment, Discipline, Sportsmanship
-- **Trojans Coaching Habits:** Shared Purpose, Progression, Praise, Review, Choice
-- **The Trojans Player:** Development of Behaviours, Skills, and Knowledge
-- **RFU Principles of Play:** Go Forward, Support, Continuity, Pressure, Contest
-- **APES Sessions:** Active, Purposeful, Enjoyable, Safe
+- **TREDS Values** - Teamwork, Respect, Enjoyment, Discipline, Sportsmanship
+- **Trojans Coaching Habits** - Shared Purpose, Progression, Praise, Review, Choice
+- **The Trojans Player** - Development of Behaviours, Skills, and Knowledge
+- **RFU Principles of Play** - Go Forward, Support, Continuity, Pressure, Contest
+- **APES Sessions** - Active, Purposeful, Enjoyable, Safe
 
-## Roadmap
+---
 
-See [Issues](https://github.com/footnote42/trojans-coaching-assistant/issues) for planned features and known bugs.
+## 🐛 Known Issues & Limitations
 
-**Recently Completed (v2.1):**
-- [x] Structured session plan display with accordion (#4 - partial)
-- [x] Toast notification system (#4 - partial)
-- [x] Loading state improvements (#4 - partial)
-- [x] Form reorganization with better hierarchy (#4 - partial)
-- [x] Quick-start template library
-- [x] Mobile responsive optimizations (#4 - partial)
-- [x] Backend API proxy for security
-- [x] Comprehensive RFU Regulation 15 compliance checks
+See [GitHub Issues](https://github.com/footnote42/trojans-coaching-assistant/issues) for current bugs and feature requests.
 
-**In Progress:**
-- [ ] Additional mobile responsive refinements (#4)
+**Current Limitations:**
+- Session history stored in browser localStorage only (cleared if browser data is cleared)
+- PDF export uses client-side rendering (large sessions may be slow)
+- No multi-user accounts or cloud storage (yet)
+- WhatsApp summaries cannot be regenerated independently
 
-**Upcoming:**
-- [ ] Individual section regeneration (#3)
-- [ ] Trojans helmet logo (#2)
-- [ ] Session history/save feature
-- [ ] Export to PDF
+---
+
+## 🗺️ Roadmap
+
+### Next Phase: Supabase Backend Integration
+- [ ] Replace localStorage with Supabase database
+- [ ] User authentication and accounts
+- [ ] Cloud-based session storage
+- [ ] Share sessions with other coaches
 - [ ] Multi-week programme planning
-- [ ] User accounts and saved preferences
 
-## Contributing
+### Future Features
+- [ ] Individual section regeneration ([#3](https://github.com/footnote42/trojans-coaching-assistant/issues/3))
+- [ ] Trojans helmet logo integration ([#2](https://github.com/footnote42/trojans-coaching-assistant/issues/2))
+- [ ] Export to Word/Google Docs format
+- [ ] Session feedback analytics dashboard
+- [ ] Equipment inventory tracking
+- [ ] Player attendance tracking
 
-This is currently a Trojans RFC internal project. If you're a Trojans coach interested in contributing or providing feedback, please contact the development team.
+### Recently Completed (v2.1 - November 2025)
+- [x] Structured session plan display with accordion
+- [x] Toast notification system
+- [x] Enhanced loading states with skeleton components
+- [x] Form layout reorganization
+- [x] Quick-start template library
+- [x] Mobile responsive optimizations
+- [x] PDF export functionality
+- [x] Session save/load to localStorage
+- [x] WhatsApp parent summaries
+- [x] Backend API proxy for security
+- [x] Color-coded RFU rules display
 
-## License
+---
 
-*[To be determined - likely internal use only for Trojans RFC]*
+## 📁 Project Structure
 
-## Acknowledgments
+```
+trojans-coaching-assistant/
+├── client/                      # React frontend
+│   └── src/
+│       ├── components/          # UI components
+│       │   ├── coaching/        # Session plan, history, templates
+│       │   └── ui/              # Radix UI primitives
+│       ├── lib/                 # Utilities (session parser, storage)
+│       ├── hooks/               # Custom React hooks
+│       └── App.tsx              # Main application (989 lines)
+├── server/                      # Express backend
+│   ├── index.ts                 # Server entry point
+│   ├── routes.ts                # API proxy endpoint
+│   └── vite.ts                  # Vite dev integration
+├── shared/                      # Shared TypeScript schemas
+│   └── schema.ts                # Drizzle ORM + Zod validation
+├── vercel.json                  # Vercel deployment config
+└── package.json                 # Monorepo dependencies
+```
+
+**Key Files:**
+- `client/src/App.tsx:66` - RFU Regulation 15 rules function
+- `client/src/App.tsx:275` - AI prompt construction
+- `client/src/lib/session-parser.ts` - Markdown parser for AI responses
+- `server/routes.ts` - Backend API proxy with comprehensive logging
+
+---
+
+## 🤝 Contributing
+
+This is currently a Trojans RFC internal project. If you're a Trojans coach interested in contributing or providing feedback, please contact the development team or open a GitHub issue.
+
+---
+
+## 📄 License
+
+*Internal use only for Trojans RFC* - License TBD
+
+---
+
+## 🙏 Acknowledgments
 
 - **Trojans RFC** - For the coaching framework and club ethos
 - **RFU** - For Regulation 15 and age grade guidelines
@@ -246,10 +278,12 @@ This is currently a Trojans RFC internal project. If you're a Trojans coach inte
 - **Tim Dancer & Sully** - Club Coaching Coordinators providing feedback
 - **All Trojans volunteer coaches** - Who inspired this tool
 
-## Contact
+---
 
-**Project Maintainer:** Wayne Ellis  
-**Club:** Trojans RFC, Southampton  
+## 📧 Contact
+
+**Project Maintainer:** Wayne Ellis
+**Club:** Trojans RFC, Southampton
 **Website:** [trojansrugby.co.uk](https://www.trojansrugby.co.uk)
 
 ---
