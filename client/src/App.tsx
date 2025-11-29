@@ -16,6 +16,8 @@ import { Toaster } from './components/ui/toaster';
 import { useToast } from './hooks/use-toast';
 import { SessionPlanSkeleton } from './components/coaching/SessionPlanSkeleton';
 import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
+import { Badge } from './components/ui/badge';
 import { TemplateLibrary } from './components/coaching/TemplateLibrary';
 import type { SessionTemplate } from './lib/templates';
 import { SessionPlan } from './components/coaching/SessionPlan';
@@ -480,31 +482,125 @@ Format it ready to copy and paste into WhatsApp.`;
         {/* Quick Start Templates */}
         <TemplateLibrary onSelectTemplate={loadTemplate} />
 
-        {/* Settings Panel */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Settings size={24} />
-              Session Settings
-            </h2>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-blue-600 hover:text-blue-700 font-semibold"
-            >
-              {showSettings ? "Hide" : "Show"}
-            </button>
-          </div>
+        {/* Main Coaching Challenge */}
+        <Card className="mb-6 shadow-xl border-blue-200 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Your Coaching Challenge
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
+              Describe what you want to achieve in this session
+            </p>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <textarea
+              value={challenge}
+              onChange={(e) => setChallenge(e.target.value)}
+              placeholder="Example: I need to develop my players' Catch and Pass skills to help them exploit space on the pitch. Players often drop the ball under pressure..."
+              rows={5}
+              className="w-full p-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+              aria-label="Coaching challenge description"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Tip: Be specific about the skills or behaviors you want to develop
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Session Details */}
+        <Card className="mb-6 shadow-xl bg-white/95 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-gray-900 text-base flex items-center gap-2">
+              <Settings className="h-5 w-5 text-gray-600" />
+              Session Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Players
+                </label>
+                <input
+                  type="number"
+                  value={numPlayers}
+                  onChange={(e) => setNumPlayers(parseInt(e.target.value) || 0)}
+                  min={6}
+                  max={25}
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  aria-label="Number of players"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Coaches
+                </label>
+                <input
+                  type="number"
+                  value={numCoaches}
+                  onChange={(e) => setNumCoaches(parseInt(e.target.value) || 0)}
+                  min={1}
+                  max={6}
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  aria-label="Number of coaches"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Session Duration
+                </label>
+                <select
+                  value={sessionDuration}
+                  onChange={(e) => setSessionDuration(parseInt(e.target.value))}
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  aria-label="Session duration"
+                >
+                  <option value={60}>60 minutes</option>
+                  <option value={75}>75 minutes</option>
+                  <option value={90}>90 minutes</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Advanced Settings - Collapsible */}
+        <Card className="mb-6 shadow-xl bg-white/95 backdrop-blur-sm">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-full p-6 flex items-center justify-between text-left hover:bg-gray-50 transition-colors rounded-lg"
+            aria-expanded={showSettings}
+            aria-controls="advanced-settings"
+          >
+            <div className="flex items-center gap-2">
+              <Settings size={20} className="text-gray-600" />
+              <h3 className="text-base font-semibold text-gray-900">
+                Advanced Settings
+              </h3>
+              <Badge variant="outline" className="text-xs">
+                Optional
+              </Badge>
+            </div>
+            <div className={`transition-transform ${showSettings ? 'rotate-180' : ''}`}>
+              <svg className="w-5 h-5 text-gray-500" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                <path d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </button>
 
           {showSettings && (
-            <div className="space-y-4 pt-4 border-t">
+            <div className="px-6 pb-6 border-t space-y-6 pt-6" id="advanced-settings">
+              {/* Age Group and RFU Rules moved here from old settings panel */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Age Group:
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Age Group
                 </label>
                 <select
                   value={ageGroup}
                   onChange={(e) => setAgeGroup(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  aria-label="Select age group"
                 >
                   {ageGroups.map((age) => (
                     <option key={age} value={age}>
@@ -512,7 +608,7 @@ Format it ready to copy and paste into WhatsApp.`;
                     </option>
                   ))}
                 </select>
-                {/* Display Regulation 15 Rules */}
+                {/* RFU Rules Alert */}
                 <Alert className={`mt-4 ${getRFUAlertStyle(ageGroup).className}`}>
                   <Shield className={`h-5 w-5 ${getRFUAlertStyle(ageGroup).iconColor}`} />
                   <AlertTitle className={getRFUAlertStyle(ageGroup).titleColor}>
@@ -541,13 +637,14 @@ Format it ready to copy and paste into WhatsApp.`;
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Session Focus:
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Session Focus
                 </label>
                 <select
                   value={sessionFocus}
                   onChange={(e) => setSessionFocus(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  aria-label="Select session focus"
                 >
                   {sessionFocusOptions.map((focus) => (
                     <option key={focus} value={focus}>
@@ -558,13 +655,14 @@ Format it ready to copy and paste into WhatsApp.`;
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Coaching Method:
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Coaching Method
                 </label>
                 <select
                   value={coachingMethod}
                   onChange={(e) => setCoachingMethod(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  aria-label="Select coaching method"
                 >
                   {coachingMethods.map((method) => (
                     <option key={method.value} value={method.value}>
@@ -575,79 +673,24 @@ Format it ready to copy and paste into WhatsApp.`;
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Main Form */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-6 mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Your Coaching Challenge:
-          </label>
-          <textarea
-            value={challenge}
-            onChange={(e) => setChallenge(e.target.value)}
-            placeholder="Describe what you want to achieve in this session..."
-            rows={4}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Players:
-              </label>
-              <input
-                type="number"
-                value={numPlayers}
-                onChange={(e) => setNumPlayers(parseInt(e.target.value) || 0)}
-                min={6}
-                max={25}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Coaches:
-              </label>
-              <input
-                type="number"
-                value={numCoaches}
-                onChange={(e) => setNumCoaches(parseInt(e.target.value) || 0)}
-                min={1}
-                max={6}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Duration:
-              </label>
-              <select
-                value={sessionDuration}
-                onChange={(e) => setSessionDuration(parseInt(e.target.value))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={60}>60 mins</option>
-                <option value={75}>75 mins</option>
-                <option value={90}>90 mins</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Desktop button - hidden on mobile */}
+        {/* Desktop Generate Button */}
+        <div className="hidden md:block mb-6">
           <button
             onClick={getCoachingAdvice}
             disabled={loading || !challenge.trim()}
-            className="hidden md:flex w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center gap-3 transform hover:scale-[1.02] disabled:hover:scale-100"
           >
             {loading ? (
               <>
-                <Loader2 className="animate-spin" size={20} />
-                Creating your session plan...
+                <Loader2 className="animate-spin" size={22} />
+                <span>Creating your session plan...</span>
               </>
             ) : (
               <>
-                <Send size={20} />
-                Generate Reg 15 Compliant Session Plan
+                <Send size={22} />
+                <span>Generate RFU Regulation 15 Compliant Session Plan</span>
               </>
             )}
           </button>
