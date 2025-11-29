@@ -7,12 +7,15 @@ import {
   Youtube,
   ThumbsUp,
   ThumbsDown,
+  Info,
+  Shield,
 } from "lucide-react";
 import { apiKeyStorage } from './lib/api-key-storage.ts';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { Toaster } from './components/ui/toaster';
 import { useToast } from './hooks/use-toast';
 import { SessionPlanSkeleton } from './components/coaching/SessionPlanSkeleton';
+import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
 
 export default function TrojansCoachingAssistant() {
   // Toast hook
@@ -405,6 +408,35 @@ Format it ready to copy and paste into WhatsApp.`;
     console.log(`Feedback: ${isPositive ? "👍" : "👎"}`);
   };
 
+  // Get Alert styling based on contact level
+  const getRFUAlertStyle = (ageGroup: string) => {
+    const rules = getRegulation15Rules(ageGroup);
+    const contactLevel = rules.contactLevel.toLowerCase();
+
+    if (contactLevel.includes("no contact") || contactLevel.includes("tag")) {
+      return {
+        className: "border-green-500 bg-green-50 dark:bg-green-950/20",
+        iconColor: "text-green-600 dark:text-green-500",
+        titleColor: "text-green-900 dark:text-green-100",
+        descColor: "text-green-800 dark:text-green-200",
+      };
+    } else if (contactLevel.includes("transitional")) {
+      return {
+        className: "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
+        iconColor: "text-yellow-600 dark:text-yellow-500",
+        titleColor: "text-yellow-900 dark:text-yellow-100",
+        descColor: "text-yellow-800 dark:text-yellow-200",
+      };
+    } else {
+      return {
+        className: "border-orange-500 bg-orange-50 dark:bg-orange-950/20",
+        iconColor: "text-orange-600 dark:text-orange-500",
+        titleColor: "text-orange-900 dark:text-orange-100",
+        descColor: "text-orange-800 dark:text-orange-200",
+      };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -454,18 +486,31 @@ Format it ready to copy and paste into WhatsApp.`;
                   ))}
                 </select>
                 {/* Display Regulation 15 Rules */}
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg text-xs">
-                  <p className="font-semibold text-blue-900 mb-1">
-                    📋 RFU Reg 15 Rules:
-                  </p>
-                  <p className="text-blue-800">
-                    {getRegulation15Rules(ageGroup).teamSize} •{" "}
-                    {getRegulation15Rules(ageGroup).contactLevel}
-                  </p>
-                  <p className="text-blue-700 mt-1">
-                    {getRegulation15Rules(ageGroup).notes}
-                  </p>
-                </div>
+                <Alert className={`mt-4 ${getRFUAlertStyle(ageGroup).className}`}>
+                  <Shield className={`h-5 w-5 ${getRFUAlertStyle(ageGroup).iconColor}`} />
+                  <AlertTitle className={getRFUAlertStyle(ageGroup).titleColor}>
+                    RFU Regulation 15 - {ageGroup}
+                  </AlertTitle>
+                  <AlertDescription className={`${getRFUAlertStyle(ageGroup).descColor} space-y-2`}>
+                    <div className="grid md:grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      <div>
+                        <span className="font-semibold">Format:</span> {getRegulation15Rules(ageGroup).teamSize}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Contact:</span> {getRegulation15Rules(ageGroup).contactLevel}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Scrums:</span> {getRegulation15Rules(ageGroup).scrums}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Duration:</span> {getRegulation15Rules(ageGroup).halfLength} halves
+                      </div>
+                    </div>
+                    <p className="text-xs italic pt-1 border-t border-current/20">
+                      {getRegulation15Rules(ageGroup).notes}
+                    </p>
+                  </AlertDescription>
+                </Alert>
               </div>
 
               <div>
