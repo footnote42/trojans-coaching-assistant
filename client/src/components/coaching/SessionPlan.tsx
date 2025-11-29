@@ -7,7 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Copy, Check } from "lucide-react";
+import { FileText, Copy, Check, Download } from "lucide-react";
 import { parseSessionPlan, type ParsedSessionPlan } from "@/lib/session-parser";
 import { useState } from "react";
 
@@ -15,9 +15,10 @@ interface SessionPlanProps {
   content: string;
   ageGroup: string;
   onCopy: () => void;
+  onExport?: () => void;
 }
 
-export function SessionPlan({ content, ageGroup, onCopy }: SessionPlanProps) {
+export function SessionPlan({ content, ageGroup, onCopy, onExport }: SessionPlanProps) {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const parsed: ParsedSessionPlan = parseSessionPlan(content);
 
@@ -42,14 +43,26 @@ export function SessionPlan({ content, ageGroup, onCopy }: SessionPlanProps) {
               </p>
             </div>
           </div>
-          <button
-            onClick={onCopy}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-            aria-label="Copy full session plan"
-          >
-            <Copy className="h-4 w-4" />
-            <span className="hidden sm:inline">Copy All</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {onExport && (
+              <button
+                onClick={onExport}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                aria-label="Export to PDF"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Download PDF</span>
+              </button>
+            )}
+            <button
+              onClick={onCopy}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+              aria-label="Copy full session plan"
+            >
+              <Copy className="h-4 w-4" />
+              <span className="hidden sm:inline">Copy All</span>
+            </button>
+          </div>
         </div>
       </CardHeader>
 

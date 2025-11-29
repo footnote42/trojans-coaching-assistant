@@ -9,6 +9,7 @@ import {
   ThumbsDown,
   Info,
   Shield,
+  Download,
 } from "lucide-react";
 import { apiKeyStorage } from './lib/api-key-storage.ts';
 import { ApiKeyModal } from './components/ApiKeyModal';
@@ -21,6 +22,9 @@ import { Badge } from './components/ui/badge';
 import { TemplateLibrary } from './components/coaching/TemplateLibrary';
 import type { SessionTemplate } from './lib/templates';
 import { SessionPlan } from './components/coaching/SessionPlan';
+import { SessionHistory } from './components/coaching/SessionHistory';
+import { saveSession, getSavedSessions, formatSessionDate, type SavedSession } from './lib/session-storage';
+import { exportSessionPlanToPDF } from './lib/pdf-export';
 
 export default function TrojansCoachingAssistant() {
   // Toast hook
@@ -45,6 +49,12 @@ export default function TrojansCoachingAssistant() {
   const [showSettings, setShowSettings] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
+
+  // Load saved sessions on mount
+  React.useEffect(() => {
+    setSavedSessions(getSavedSessions());
+  }, []);
 
   const ageGroups = [
     "U6",
@@ -399,6 +409,31 @@ Format it ready to copy and paste into WhatsApp.`;
       const summaryData = await summaryResponse.json();
       const summaryClaude = summaryData.content[0].text;
       setWhatsappSummary(summaryClaude);
+
+      // Auto-save session to localStorage
+      try {
+        const savedSession = saveSession({
+          ageGroup,
+          challenge,
+          sessionFocus,
+          coachingMethod,
+          numPlayers,
+          numCoaches,
+          sessionDuration,
+          sessionPlan: claudeResponse,
+          whatsappSummary: summaryClaude,
+        });
+        setSavedSessions(getSavedSessions());
+
+        toast({
+          title: "Session saved",
+          description: "This session has been saved to your history",
+          duration: 3000,
+        });
+      } catch (saveError) {
+        console.error('Failed to save session:', saveError);
+        // Don't show error to user - saving is not critical
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred",
@@ -463,6 +498,75 @@ Format it ready to copy and paste into WhatsApp.`;
     }, 100);
   };
 
+  // Load a saved session
+  const loadSavedSession = (session: SavedSession) => {
+    // Load session parameters
+    setChallenge(session.challenge);
+    setAgeGroup(session.ageGroup);
+    setSessionFocus(session.sessionFocus);
+    setCoachingMethod(session.coachingMethod);
+    setNumPlayers(session.numPlayers);
+    setNumCoaches(session.numCoaches);
+    setSessionDuration(session.sessionDuration);
+
+    // Load generated content
+    setResponse(session.sessionPlan);
+    setWhatsappSummary(session.whatsappSummary);
+
+    // Clear error and reset feedback
+    setError("");
+    setFeedback(null);
+
+    // Show toast confirmation
+    toast({
+      title: "Session loaded",
+      description: `Loaded ${session.ageGroup} session from ${formatSessionDate(session.timestamp)}`,
+      duration: 3000,
+    });
+
+    // Smooth scroll to session plan
+    setTimeout(() => {
+      const sessionPlanElement = document.querySelector('[data-session-plan]');
+      if (sessionPlanElement) {
+        sessionPlanElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
+  // Handle session deletion
+  const handleSessionDeleted = () => {
+    setSavedSessions(getSavedSessions());
+  };
+
+  // Handle PDF export
+  const handlePDFExport = async () => {
+    try {
+      await exportSessionPlanToPDF({
+        sessionPlan: response,
+        ageGroup,
+        challenge,
+        sessionFocus,
+        sessionDuration,
+        numPlayers,
+        numCoaches,
+      });
+
+      toast({
+        title: "PDF exported",
+        description: "Session plan downloaded successfully",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Could not generate PDF. Please try again.",
+        duration: 3000,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -481,6 +585,13 @@ Format it ready to copy and paste into WhatsApp.`;
 
         {/* Quick Start Templates */}
         <TemplateLibrary onSelectTemplate={loadTemplate} />
+
+        {/* Session History */}
+        <SessionHistory
+          sessions={savedSessions}
+          onLoadSession={loadSavedSession}
+          onSessionDeleted={handleSessionDeleted}
+        />
 
         {/* Main Coaching Challenge */}
         <Card className="mb-6 shadow-xl border-blue-200 bg-white/95 backdrop-blur-sm">
@@ -778,18 +889,21 @@ Format it ready to copy and paste into WhatsApp.`;
             )}
 
             {/* Full Session Plan - Structured Display */}
-            <SessionPlan
-              content={response}
-              ageGroup={ageGroup}
-              onCopy={() => {
-                navigator.clipboard.writeText(response);
-                toast({
-                  title: "Copied!",
-                  description: "Session plan copied to clipboard",
-                  duration: 2000,
-                });
-              }}
-            />
+            <div data-session-plan>
+              <SessionPlan
+                content={response}
+                ageGroup={ageGroup}
+                onCopy={() => {
+                  navigator.clipboard.writeText(response);
+                  toast({
+                    title: "Copied!",
+                    description: "Session plan copied to clipboard",
+                    duration: 2000,
+                  });
+                }}
+                onExport={handlePDFExport}
+              />
+            </div>
           </>
         )}
 
