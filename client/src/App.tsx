@@ -561,10 +561,11 @@ Format it ready to copy and paste into WhatsApp.`;
             </div>
           </div>
 
+          {/* Desktop button - hidden on mobile */}
           <button
             onClick={getCoachingAdvice}
             disabled={loading || !challenge.trim()}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="hidden md:flex w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -736,6 +737,30 @@ Format it ready to copy and paste into WhatsApp.`;
           </div>
         )}
       </div>
+
+      {/* Mobile sticky button - fixed at bottom, hidden on desktop */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg z-50">
+        <button
+          onClick={getCoachingAdvice}
+          disabled={loading || !challenge.trim()}
+          className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[48px]"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              <span className="text-sm">Creating...</span>
+            </>
+          ) : (
+            <>
+              <Send size={20} />
+              <span>Generate Plan</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Bottom padding on mobile to prevent content being hidden by sticky button */}
+      <div className="md:hidden h-20" aria-hidden="true" />
 
       {/* API Key Modal */}
       <ApiKeyModal
