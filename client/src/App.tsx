@@ -341,7 +341,9 @@ Make it practical, detailed, and immediately usable for ${numCoaches} coach(es) 
       });
 
       if (!apiResponse.ok) {
-        throw new Error(`API request failed: ${apiResponse.status}`);
+        const errorData = await apiResponse.json().catch(() => ({}));
+        const userMessage = errorData.userMessage || `API request failed with status ${apiResponse.status}`;
+        throw new Error(userMessage);
       }
 
       const data = await apiResponse.json();
@@ -375,7 +377,9 @@ Format it ready to copy and paste into WhatsApp.`;
       });
 
       if (!summaryResponse.ok) {
-        throw new Error(`Summary request failed: ${summaryResponse.status}`);
+        const errorData = await summaryResponse.json().catch(() => ({}));
+        const userMessage = errorData.userMessage || `WhatsApp summary generation failed with status ${summaryResponse.status}`;
+        throw new Error(userMessage);
       }
 
       const summaryData = await summaryResponse.json();
