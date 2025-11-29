@@ -12,10 +12,12 @@ Trojans Coaching Assistant is an AI-powered rugby training session planner for T
 
 ### Running the Application
 ```bash
-npm run dev          # Start development server (runs Vite + Express on port 5000)
+npm run dev          # Start Vite development server (frontend only)
+npm start            # Start Express server (includes Vite in dev mode, serves on port 5000)
 npm run build        # Production build
-npm run preview      # Preview production build
 ```
+
+**Note:** In development, use `npm start` to run the full application (Express backend + Vite frontend integration). The server runs on port 5000.
 
 ### Database Operations
 ```bash
@@ -65,13 +67,13 @@ trojans-coaching-assistant/
 - Backend proxies requests to Anthropic Claude API with server-side API key
 - Uses Claude Sonnet 4.5 model (`claude-sonnet-4-20250514`)
 - **Benefits:** Enhanced security (API key never exposed to browser), centralized rate limiting, request logging capabilities
-- **Legacy artifacts:** `lib/api-key-storage.ts` and `components/ApiKeyModal.tsx` exist but are no longer used (candidates for removal)
+- **Client-side API key management:** The application still includes `lib/api-key-storage.ts` and `components/ApiKeyModal.tsx` for fallback API key management (stored in localStorage). These are used when `ANTHROPIC_API_KEY` is not configured server-side.
 
 **Database (Currently Minimal Usage):**
 - Schema defined in `shared/schema.ts` using Drizzle ORM
-- Storage interface in `server/storage.ts`
-- Currently implements basic user authentication scaffolding
-- Session management with `express-session`
+- Storage interface in `server/storage.ts` with in-memory implementation (`MemStorage`)
+- Currently implements basic user CRUD scaffolding (not actively used in the application)
+- Database integration is set up but minimal - primarily prepared for future features
 
 ## Critical Domain Logic
 
@@ -102,7 +104,7 @@ All session plans must incorporate:
 - **The Trojans Player:** Development of Behaviours, Skills, and Knowledge
 - **APES Sessions:** Active, Purposeful, Enjoyable, Safe
 
-This framework is embedded in the AI prompt at `client/src/App.tsx:281`.
+This framework is embedded in the AI prompt at `client/src/App.tsx:275` (in the `getCoachingAdvice()` function).
 
 ### Session Generation Flow
 
@@ -150,7 +152,7 @@ Refer to `design_guidelines.md` for complete design specifications:
 4. Include dark mode styles using HSL color variables
 
 ### Modifying AI Prompts
-Location: `client/src/App.tsx:281` in the `getCoachingAdvice()` function
+Location: `client/src/App.tsx:275` in the `getCoachingAdvice()` function
 
 When modifying:
 1. Ensure RFU Regulation 15 rules are accurately represented
@@ -198,7 +200,7 @@ When working with rugby content:
 ## Known Issues & Roadmap
 
 ### Technical Debt
-- **Legacy API key components:** `client/src/lib/api-key-storage.ts` and `client/src/components/ApiKeyModal.tsx` are no longer used after migration to backend proxy pattern. These files and their imports in App.tsx can be safely removed.
+- **Dual API key management:** The application supports both server-side (`ANTHROPIC_API_KEY` env var) and client-side (localStorage) API key storage. This dual approach adds complexity. Consider standardizing on server-side only for production deployments.
 
 ### Planned Features
 See GitHub Issues for planned features:
