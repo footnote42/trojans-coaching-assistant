@@ -6,6 +6,43 @@ AI-powered rugby coaching session planner for Trojans RFC - RFU Regulation 15 co
 
 The Trojans Coaching Assistant helps rugby coaches at Trojans RFC quickly generate comprehensive, age-appropriate training session plans that follow the club's coaching framework and comply with RFU Regulation 15.
 
+## Recent Updates (v2.1 - November 2025)
+
+**UI/UX Improvements - Phase 1 Complete:**
+
+✅ **Structured Session Plan Display** - Session plans now display in collapsible accordion sections with:
+- Individual activity cards with duration badges
+- Copy-to-clipboard for individual sections or full plan
+- Numbered activity indicators
+- Subsection organization for complex activities
+
+✅ **Modern Toast Notifications** - Replaced browser alerts with polished toast notifications for:
+- Template loading confirmations
+- Copy-to-clipboard feedback
+- Error messages with user-friendly descriptions
+
+✅ **Enhanced Loading States** - Professional skeleton loading with:
+- Multi-stage loading indicators
+- Estimated completion time display
+- Animated placeholders for session structure
+
+✅ **Improved Information Hierarchy** - Reorganized form layout with:
+- Dedicated "Your Coaching Challenge" card with prominent textarea
+- Separate "Session Details" card for players/coaches/duration
+- Collapsible "Advanced Settings" for age group, focus, and coaching method
+- Color-coded RFU Regulation 15 rules display (green/yellow/orange by contact level)
+
+✅ **Quick Start Templates** - Pre-built coaching challenges for common scenarios:
+- Catch & Pass Skills (U10)
+- Safe Tackle Technique (U12)
+- Breakdown Skills (U14)
+- Creating Space in Attack (U11)
+
+✅ **Mobile Optimizations** - Responsive design improvements:
+- Fixed sticky generate button for mobile devices
+- Touch-optimized button sizes (48px minimum)
+- Responsive grid layouts for all form sections
+
 ### Key Features
 
 - ✅ **RFU Regulation 15 Compliant** - Automatically adjusts team sizes, contact levels, and match duration for each age group (U6-U18)
@@ -26,10 +63,13 @@ The Trojans Coaching Assistant helps rugby coaches at Trojans RFC quickly genera
 ## Tech Stack
 
 - **Frontend:** React 18 + TypeScript
-- **Styling:** Tailwind CSS
+- **UI Components:** Radix UI primitives (Accordion, Alert, Toast, Card, Badge)
+- **Styling:** Tailwind CSS with custom design system
 - **Icons:** Lucide React
 - **AI:** Claude Sonnet 4.5 (Anthropic API)
-- **Build Tool:** Vite
+- **Backend:** Express.js with backend proxy pattern for API security
+- **Build Tool:** Vite with HMR (Hot Module Replacement)
+- **Database:** Drizzle ORM + PostgreSQL (Neon Serverless) - minimal usage
 - **Deployment:** Replit (development) / TBD (production)
 
 ## Getting Started
@@ -110,6 +150,39 @@ For production deployment with your own API key, environment variables need to b
    - YouTube resource suggestions
 4. **Copy and use** - WhatsApp summary for parents, full plan for coaches
 
+## Current Application Status
+
+**✅ Fully Functional Production-Ready Features:**
+- Complete session plan generation with AI-powered content
+- RFU Regulation 15 age-group compliance validation
+- Trojans coaching framework integration
+- Backend API proxy for secure API key management
+- Modern, responsive UI with mobile optimizations
+- Structured session plan display with collapsible sections
+- Quick-start template library
+- Toast notification system
+- Professional loading states
+- WhatsApp parent message generation
+- Copy-to-clipboard functionality
+- Feedback collection system
+
+**Architecture Overview:**
+- **Monorepo structure** with unified Express server
+- **Backend proxy pattern** - API requests routed through `/api/generate-session` endpoint
+- **Secure API key management** - Server-side `ANTHROPIC_API_KEY` environment variable
+- **Frontend** - React 18 + TypeScript with Vite dev server integration
+- **UI Components** - Radix UI primitives with Tailwind CSS styling
+- **Session parsing** - Custom markdown parser (`lib/session-parser.ts`) structures AI responses
+- **State management** - React hooks with local state (no external state library needed)
+
+**File Structure Highlights:**
+- `client/src/App.tsx` - Main application component with form and session generation
+- `client/src/components/coaching/SessionPlan.tsx` - Structured accordion display
+- `client/src/lib/session-parser.ts` - Parses AI markdown into structured sections
+- `client/src/lib/templates.ts` - Quick-start coaching challenge templates
+- `server/routes.ts` - API proxy endpoint for Anthropic API
+- `shared/schema.ts` - Database and validation schemas (minimal usage)
+
 ## RFU Regulation 15 Compliance
 
 The assistant enforces correct rules for each age group:
@@ -136,13 +209,26 @@ All session plans incorporate:
 
 See [Issues](https://github.com/footnote42/trojans-coaching-assistant/issues) for planned features and known bugs.
 
+**Recently Completed (v2.1):**
+- [x] Structured session plan display with accordion (#4 - partial)
+- [x] Toast notification system (#4 - partial)
+- [x] Loading state improvements (#4 - partial)
+- [x] Form reorganization with better hierarchy (#4 - partial)
+- [x] Quick-start template library
+- [x] Mobile responsive optimizations (#4 - partial)
+- [x] Backend API proxy for security
+- [x] Comprehensive RFU Regulation 15 compliance checks
+
+**In Progress:**
+- [ ] Additional mobile responsive refinements (#4)
+
 **Upcoming:**
 - [ ] Individual section regeneration (#3)
 - [ ] Trojans helmet logo (#2)
-- [ ] UI/UX improvements (#4)
 - [ ] Session history/save feature
 - [ ] Export to PDF
 - [ ] Multi-week programme planning
+- [ ] User accounts and saved preferences
 
 ## Contributing
 

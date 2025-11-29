@@ -6,7 +6,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Trojans Coaching Assistant is an AI-powered rugby training session planner for Trojans RFC that generates RFU Regulation 15 compliant coaching plans. The application uses Claude Sonnet 4.5 via the Anthropic API to create age-appropriate, comprehensive training sessions that follow the club's coaching framework.
 
-**Tech Stack:** React 18 + TypeScript, Express.js, Vite, Tailwind CSS, Drizzle ORM, PostgreSQL (Neon Serverless)
+**Tech Stack:** React 18 + TypeScript, Express.js, Vite, Tailwind CSS, Radix UI, Drizzle ORM, PostgreSQL (Neon Serverless)
+
+**Current Status:** ✅ **Production-Ready** - Fully functional application with complete UI/UX improvements
+
+## Recent Updates (v2.1 - November 2025)
+
+**Major UI/UX Improvements Completed:**
+
+✅ **Structured Session Plan Parser & Display**
+- Created `lib/session-parser.ts` - Custom markdown parser that structures AI responses into sections
+- Built `SessionPlan.tsx` component with Radix UI Accordion for collapsible activity display
+- Individual section copy-to-clipboard functionality
+- Duration badges and numbered activity indicators
+- Support for nested subsections with visual hierarchy
+
+✅ **Modern User Feedback System**
+- Replaced browser `alert()` calls with Radix UI Toast notifications
+- Toast configuration: 3-message limit, 3-second auto-dismiss
+- Success/error/info variants with proper styling
+- Template loading confirmations and clipboard feedback
+
+✅ **Enhanced Loading States**
+- `SessionPlanSkeleton.tsx` component for professional loading experience
+- Multi-stage loading indicators ("Generating your session plan...")
+- Estimated completion time display (10-30 seconds)
+- Animated placeholders matching final structure
+
+✅ **Reorganized Form Layout**
+- Three-tier card-based hierarchy for better information flow:
+  1. **Your Coaching Challenge** - Prominent textarea with tips
+  2. **Session Details** - Grid layout for players/coaches/duration
+  3. **Advanced Settings** - Collapsible card with age group/focus/method
+- Color-coded RFU Regulation 15 rules (green/yellow/orange by contact level)
+- Enhanced desktop generate button with gradient and hover effects
+- Proper ARIA accessibility attributes throughout
+
+✅ **Quick-Start Template Library**
+- `lib/templates.ts` with 4 pre-built coaching challenges
+- `TemplateLibrary.tsx` component with responsive grid
+- Auto-fill functionality with smooth scrolling to challenge textarea
+- Toast confirmations on template selection
+
+✅ **Mobile Responsive Enhancements**
+- Fixed sticky generate button for mobile (hidden on desktop)
+- Touch-optimized button sizes (48px minimum height)
+- Responsive grid layouts throughout
+- Mobile-first design patterns
 
 ## Development Commands
 
@@ -61,12 +107,12 @@ trojans-coaching-assistant/
 - `@assets/` → `attached_assets/`
 
 **AI Integration (Backend Proxy Pattern):**
-- Backend proxy route at `/api/generate` (server/routes.ts:7) handles all Anthropic API requests
+- Backend proxy route at `/api/generate-session` (server/routes.ts) handles all Anthropic API requests
 - API key stored securely in server environment variable (`ANTHROPIC_API_KEY`)
-- Frontend makes POST requests to backend proxy (client/src/App.tsx:332, 366)
+- Frontend makes POST requests to backend proxy (client/src/App.tsx)
 - Backend proxies requests to Anthropic Claude API with server-side API key
 - Uses Claude Sonnet 4.5 model (`claude-sonnet-4-20250514`)
-- **Benefits:** Enhanced security (API key never exposed to browser), centralized rate limiting, request logging capabilities
+- **Benefits:** Enhanced security (API key never exposed to browser), centralized rate limiting, comprehensive request logging
 - **Client-side API key management:** The application still includes `lib/api-key-storage.ts` and `components/ApiKeyModal.tsx` for fallback API key management (stored in localStorage). These are used when `ANTHROPIC_API_KEY` is not configured server-side.
 
 **Database (Currently Minimal Usage):**
@@ -115,13 +161,24 @@ This framework is embedded in the AI prompt at `client/src/App.tsx:275` (in the 
    - Age-specific RFU rules
    - Trojans framework requirements
    - Coaching method (Game/Skill Zone, Freeze Frame, Block Practice, Decision Making)
-4. Frontend sends prompt to backend proxy endpoint `/api/generate`
+4. Frontend sends prompt to backend proxy endpoint `/api/generate-session`
 5. Backend proxy authenticates with Anthropic API using server-side `ANTHROPIC_API_KEY`
 6. Backend forwards request to Claude Sonnet API and returns response to frontend
-7. Frontend parses response into:
-   - Main session plan (markdown formatted)
-   - WhatsApp summary for parents
-8. Includes feedback system (thumbs up/down) for session quality
+7. **Frontend processes response with structured parsing:**
+   - `lib/session-parser.ts` parses markdown into structured `ActivitySection[]` objects
+   - Extracts activity titles, durations, content, and nested subsections
+   - Detects common patterns: numbered lists, markdown headers, activity keywords
+   - Fallback to single section if parsing fails
+8. **Frontend displays structured session plan:**
+   - `SessionPlan.tsx` component renders parsed activities in Radix UI Accordion
+   - Each activity card shows numbered indicator, title, duration badge
+   - Collapsible sections with individual copy-to-clipboard buttons
+   - Full plan copy button at top and bottom
+9. **WhatsApp summary generation:**
+   - Separate API call generates parent-friendly summary (150-200 words)
+   - Includes session focus, key skills, equipment reminders
+   - Copy-to-clipboard functionality with toast confirmation
+10. **Feedback system:** Thumbs up/down for session quality tracking
 
 ## UI Component Library
 
@@ -202,21 +259,54 @@ When working with rugby content:
 ### Technical Debt
 - **Dual API key management:** The application supports both server-side (`ANTHROPIC_API_KEY` env var) and client-side (localStorage) API key storage. This dual approach adds complexity. Consider standardizing on server-side only for production deployments.
 
+### Recently Completed (v2.1 - November 2025)
+- [x] Structured session plan parser and accordion display (#4 - partial)
+- [x] Toast notification system (#4 - partial)
+- [x] Enhanced loading states with skeleton components (#4 - partial)
+- [x] Form layout reorganization with better hierarchy (#4 - partial)
+- [x] Quick-start template library
+- [x] Mobile responsive optimizations (#4 - partial)
+- [x] Color-coded RFU Regulation 15 rules display
+- [x] Individual section copy-to-clipboard
+- [x] Backend API proxy with comprehensive logging
+
+### In Progress
+- [ ] Additional mobile responsive refinements (#4)
+
 ### Planned Features
 See GitHub Issues for planned features:
-- Individual section regeneration (#3)
-- Trojans helmet logo (#2)
-- UI/UX improvements (#4)
-- Session history/save feature
-- Export to PDF
-- Multi-week programme planning
+- [ ] Individual section regeneration (#3)
+- [ ] Trojans helmet logo (#2)
+- [ ] Session history/save feature
+- [ ] Export to PDF
+- [ ] Multi-week programme planning
+- [ ] User accounts and saved preferences
 
 ## Important Files Reference
 
-- `client/src/App.tsx` - Main application logic, frontend AI integration, RFU rules
-- `server/routes.ts` - API routes including `/api/generate` proxy endpoint for Anthropic API
-- `shared/schema.ts` - Database and validation schemas
-- `server/index.ts` - Express server setup and middleware
-- `vite.config.ts` - Build configuration and path aliases
+### Core Application Files
+- `client/src/App.tsx` - Main application component with form, session generation, RFU rules (App.tsx:77)
+- `server/routes.ts` - API routes including `/api/generate-session` proxy endpoint for Anthropic API
+- `server/index.ts` - Express server setup and middleware (port 5000)
+- `shared/schema.ts` - Database and validation schemas (Drizzle + Zod)
+
+### UI Components (v2.1)
+- `client/src/components/coaching/SessionPlan.tsx` - Structured accordion display with copy-to-clipboard
+- `client/src/components/coaching/SessionPlanSkeleton.tsx` - Loading state component
+- `client/src/components/coaching/TemplateLibrary.tsx` - Quick-start template grid
+- `client/src/components/ui/toaster.tsx` - Toast notification system
+- `client/src/components/ui/card.tsx` - Radix UI Card components
+- `client/src/components/ui/accordion.tsx` - Radix UI Accordion components
+- `client/src/components/ui/alert.tsx` - Alert component for RFU rules display
+- `client/src/components/ui/badge.tsx` - Badge component for duration indicators
+
+### Utilities & Libraries
+- `client/src/lib/session-parser.ts` - Markdown parser for structuring AI responses
+- `client/src/lib/templates.ts` - Quick-start coaching challenge templates
+- `client/src/lib/api-key-storage.ts` - Fallback API key management (localStorage)
+- `client/src/hooks/use-toast.ts` - Toast notification hook
+
+### Configuration
+- `vite.config.ts` - Build configuration and path aliases (@/, @shared/, @assets/)
 - `design_guidelines.md` - Complete design system specifications
-- `.github/copilot-instructions.md` - AI development guidelines (already incorporated above)
+- `.github/copilot-instructions.md` - AI development guidelines (incorporated in this file)
