@@ -18,6 +18,7 @@ import { SessionPlanSkeleton } from './components/coaching/SessionPlanSkeleton';
 import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
 import { TemplateLibrary } from './components/coaching/TemplateLibrary';
 import type { SessionTemplate } from './lib/templates';
+import { SessionPlan } from './components/coaching/SessionPlan';
 
 export default function TrojansCoachingAssistant() {
   // Toast hook
@@ -733,36 +734,19 @@ Format it ready to copy and paste into WhatsApp.`;
               </div>
             )}
 
-            {/* Full Session Plan */}
-            <div className="bg-white rounded-lg shadow-xl p-6">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b">
-                <div className="flex items-center gap-2">
-                  <FileText className="text-blue-600" size={24} />
-                  <h2 className="text-xl font-bold text-gray-800">
-                    Session Plan - {ageGroup}
-                  </h2>
-                </div>
-                <Youtube className="text-red-600" size={24} />
-              </div>
-              <div className="prose max-w-none mb-4">
-                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
-                  {response}
-                </pre>
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(response);
-                  toast({
-                    title: "Copied!",
-                    description: "Session plan copied to clipboard",
-                    duration: 2000,
-                  });
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-              >
-                📋 Copy Full Session Plan
-              </button>
-            </div>
+            {/* Full Session Plan - Structured Display */}
+            <SessionPlan
+              content={response}
+              ageGroup={ageGroup}
+              onCopy={() => {
+                navigator.clipboard.writeText(response);
+                toast({
+                  title: "Copied!",
+                  description: "Session plan copied to clipboard",
+                  duration: 2000,
+                });
+              }}
+            />
           </>
         )}
 
