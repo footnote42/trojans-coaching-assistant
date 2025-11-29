@@ -12,6 +12,7 @@ import { apiKeyStorage } from './lib/api-key-storage.ts';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { Toaster } from './components/ui/toaster';
 import { useToast } from './hooks/use-toast';
+import { SessionPlanSkeleton } from './components/coaching/SessionPlanSkeleton';
 
 export default function TrojansCoachingAssistant() {
   // Toast hook
@@ -586,8 +587,11 @@ Format it ready to copy and paste into WhatsApp.`;
           </div>
         )}
 
+        {/* Loading State with Skeleton */}
+        {loading && <SessionPlanSkeleton />}
+
         {/* Response Display */}
-        {response && (
+        {response && !loading && (
           <>
             {/* Feedback Section */}
             <div className="bg-white rounded-lg shadow-xl p-4 mb-6">
