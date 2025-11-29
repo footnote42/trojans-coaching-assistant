@@ -329,14 +329,14 @@ For EACH activity provide:
 Make it practical, detailed, and immediately usable for ${numCoaches} coach(es) with ${numPlayers} ${ageGroup} players.`;
 
     try {
-      const apiResponse = await fetch("/api/generate", {
+      const apiResponse = await fetch("/api/generate-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           prompt: prompt,
-          maxTokens: 4000,
+          maxTokens: 4096,
         }),
       });
 
@@ -363,7 +363,7 @@ ${claudeResponse}
 
 Format it ready to copy and paste into WhatsApp.`;
 
-      const summaryResponse = await fetch("/api/generate", {
+      const summaryResponse = await fetch("/api/generate-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
