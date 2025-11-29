@@ -10,8 +10,13 @@ import {
 } from "lucide-react";
 import { apiKeyStorage } from './lib/api-key-storage.ts';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { Toaster } from './components/ui/toaster';
+import { useToast } from './hooks/use-toast';
 
 export default function TrojansCoachingAssistant() {
+  // Toast hook
+  const { toast } = useToast();
+
   // Session inputs
   const [challenge, setChallenge] = useState(
     "I need to develop my players' Catch and Pass skills in order to help their ability to exploit space on the pitch.",
@@ -639,7 +644,11 @@ Format it ready to copy and paste into WhatsApp.`;
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(whatsappSummary);
-                    alert("✓ Copied to clipboard!");
+                    toast({
+                      title: "Copied!",
+                      description: "WhatsApp message ready to paste",
+                      duration: 2000,
+                    });
                   }}
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                 >
@@ -667,7 +676,11 @@ Format it ready to copy and paste into WhatsApp.`;
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(response);
-                  alert("✓ Session plan copied to clipboard!");
+                  toast({
+                    title: "Copied!",
+                    description: "Session plan copied to clipboard",
+                    duration: 2000,
+                  });
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
               >
@@ -728,6 +741,9 @@ Format it ready to copy and paste into WhatsApp.`;
           setShowApiKeyModal(false);
         }}
       />
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }
