@@ -1,0 +1,45 @@
+# Vercel Ignore File
+# Files and directories to exclude from Vercel deployment
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Development files
+node_modules
+.git
+.github
+.vscode
+.idea
+
+# Build artifacts
+dist
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation (except VERCEL-DEPLOYMENT.md)
+API-TESTING.md
+QUICK-WINS.md
+UI-AUDIT.md
+UI-SUMMARY.md
+replit.md
+design_guidelines.md
+
+# Test files
+test-api.js
+check-jsx.js
+
+# Images and assets not needed for production
+images/
+
+# Server development files (not needed for Vercel)
+server/
+
+# Database migrations (not currently used)
+migrations/
+
+# Drizzle config (not needed for Vercel)
+drizzle.config.ts

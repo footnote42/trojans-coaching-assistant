@@ -1,25 +1,31 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": null,
   "outputDirectory": "dist/public",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/api/generate-session",
+      "destination": "/api/generate-session"
     },
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
+  "routes": [
+    {
+      "src": "/api/generate-session",
+      "dest": "/api/generate-session.ts"
+    }
+  ],
   "functions": {
     "api/**/*.ts": {
-      "runtime": "@vercel/node@3.0.0"
+      "runtime": "nodejs20.x"
     }
   },
   "env": {
-    "ANTHROPIC_API_KEY": "@anthropic_api_key"
+    "NODE_ENV": "production"
   }
 }
