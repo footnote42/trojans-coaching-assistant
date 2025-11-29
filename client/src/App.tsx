@@ -16,6 +16,8 @@ import { Toaster } from './components/ui/toaster';
 import { useToast } from './hooks/use-toast';
 import { SessionPlanSkeleton } from './components/coaching/SessionPlanSkeleton';
 import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
+import { TemplateLibrary } from './components/coaching/TemplateLibrary';
+import type { SessionTemplate } from './lib/templates';
 
 export default function TrojansCoachingAssistant() {
   // Toast hook
@@ -437,6 +439,27 @@ Format it ready to copy and paste into WhatsApp.`;
     }
   };
 
+  // Handle template selection
+  const loadTemplate = (template: SessionTemplate) => {
+    setChallenge(template.challenge);
+    setAgeGroup(template.ageGroup);
+    setSessionFocus(template.sessionFocus);
+    setCoachingMethod(template.coachingMethod);
+
+    // Show toast confirmation
+    toast({
+      title: "Template loaded",
+      description: `${template.title} - You can edit the challenge below`,
+      duration: 3000,
+    });
+
+    // Smooth scroll to challenge textarea
+    setTimeout(() => {
+      document.querySelector('textarea')?.focus();
+      document.querySelector('textarea')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -452,6 +475,9 @@ Format it ready to copy and paste into WhatsApp.`;
             v2.0 - Full Regulation 15 Compliance (2025-26 Season)
           </p>
         </div>
+
+        {/* Quick Start Templates */}
+        <TemplateLibrary onSelectTemplate={loadTemplate} />
 
         {/* Settings Panel */}
         <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-6 mb-6">
