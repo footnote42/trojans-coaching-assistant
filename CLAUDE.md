@@ -2,7 +2,7 @@
 
 This file provides comprehensive guidance to Claude Code (claude.ai/code) and future developers working with the Trojans Coaching Assistant codebase.
 
-**Last Updated:** November 2025 (v2.1 - Production Deployment)
+**Last Updated:** November 30, 2025 (v2.1 - Production Deployment)
 
 ---
 
@@ -49,7 +49,8 @@ The Trojans Coaching Assistant is an AI-powered rugby training session planner s
 **How it works:**
 - `npm run build` generates static assets to `dist/public/`
 - Vercel serves static files from CDN
-- API routes in `server/routes.ts` compile to serverless Edge Functions
+- API routes in `api/` directory (e.g., `api/generate-session.ts`) are auto-detected and deployed as serverless functions
+- `server/routes.ts` is used only for local development (Express server)
 - Environment variables configured in Vercel dashboard
 
 **Trade-offs:**
@@ -75,7 +76,11 @@ The Trojans Coaching Assistant is an AI-powered rugby training session planner s
 3. Backend proxies to Anthropic Claude API
 4. Response streams back through backend to frontend
 
-**Critical file:** `server/routes.ts:12` - Contains the proxy logic with comprehensive logging
+**Critical files:**
+- `server/routes.ts:7` - Local development proxy endpoint (Express)
+- `api/generate-session.ts` - Production serverless function (Vercel)
+
+Both files contain identical proxy logic with comprehensive logging
 
 **Trade-offs:**
 - Adds latency (~50-100ms) vs direct frontend API calls
@@ -451,6 +456,19 @@ All sessions must be:
 
 ## 🐛 Known Technical Debt to Address
 
+### ✅ Recently Resolved Issues
+
+**Missing Vercel Serverless Function (Fixed: November 30, 2025)**
+- **Issue:** Production deployment was missing `api/generate-session.ts`, causing 404 errors on `/api/generate-session` endpoint
+- **Root cause:** The `/api` directory existed but was empty. Vercel requires serverless function files in this directory.
+- **Solution:** Created `api/generate-session.ts` with identical logic to `server/routes.ts` (local dev version)
+- **Lesson learned:** Production (Vercel) and local development use different approaches:
+  - **Local:** Express server (`server/routes.ts`) with integrated Vite
+  - **Production:** Static hosting + serverless functions (`api/generate-session.ts`)
+- **Prevention:** Always verify `api/` directory contains required serverless functions before deploying
+
+---
+
 ### 1. Dual API Key Management System
 
 **Issue:** Application supports both server-side (`ANTHROPIC_API_KEY` env var) and client-side (localStorage) API key storage.
@@ -593,15 +611,23 @@ All sessions must be:
 - Line 275: `getCoachingAdvice()` - **CRITICAL** AI prompt construction
 - Session generation logic, form handling, state management
 
-**`server/routes.ts`** - API proxy endpoint
-- Line 12: `/api/generate-session` route handler
+**`server/routes.ts`** - API proxy endpoint (local development)
+- Line 7: `/api/generate-session` route handler
 - Anthropic API integration with comprehensive logging
 - Server-side API key storage and validation
+- Used only when running `npm start` locally
 
-**`server/index.ts`** - Express server entry point
+**`api/generate-session.ts`** - Serverless function (production)
+- Vercel serverless function for `/api/generate-session` endpoint
+- Identical logic to `server/routes.ts` but adapted for serverless environment
+- Auto-deployed by Vercel when changes are pushed to GitHub
+- **Critical:** Must exist for production deployment to work
+
+**`server/index.ts`** - Express server entry point (local development)
 - Port 5000 (configurable via PORT env var)
 - Vite dev middleware integration
 - CORS configuration
+- Not used in production (Vercel uses static hosting + serverless functions)
 
 **`shared/schema.ts`** - Database schemas (Drizzle ORM + Zod)
 - User schema (minimal, prepared for future)

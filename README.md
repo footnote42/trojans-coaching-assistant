@@ -142,6 +142,12 @@ The project includes `vercel.json` with:
 - Framework detection: Vite
 - API route rewrites for `/api/*` endpoints
 
+**Important:** The `/api/generate-session` endpoint is handled by:
+- **Production (Vercel):** `api/generate-session.ts` serverless function
+- **Local Development:** `server/routes.ts` Express endpoint
+
+Both implementations share the same logic for proxying requests to the Anthropic API.
+
 ---
 
 ## 📋 Environment Variables
@@ -194,6 +200,13 @@ See [GitHub Issues](https://github.com/footnote42/trojans-coaching-assistant/iss
 - No multi-user accounts or cloud storage (yet)
 - WhatsApp summaries cannot be regenerated independently
 
+### Common Troubleshooting
+
+**"API request failed with status 404" error:**
+- **Cause:** Missing serverless function file in production deployment
+- **Solution:** Ensure `api/generate-session.ts` exists and is committed to Git
+- **Verify:** Check that `ANTHROPIC_API_KEY` is set in Vercel environment variables
+
 ---
 
 ## 🗺️ Roadmap
@@ -240,10 +253,12 @@ trojans-coaching-assistant/
 │       ├── lib/                 # Utilities (session parser, storage)
 │       ├── hooks/               # Custom React hooks
 │       └── App.tsx              # Main application (989 lines)
-├── server/                      # Express backend
+├── server/                      # Express backend (local dev only)
 │   ├── index.ts                 # Server entry point
 │   ├── routes.ts                # API proxy endpoint
 │   └── vite.ts                  # Vite dev integration
+├── api/                         # Vercel serverless functions (production)
+│   └── generate-session.ts      # API endpoint for session generation
 ├── shared/                      # Shared TypeScript schemas
 │   └── schema.ts                # Drizzle ORM + Zod validation
 ├── vercel.json                  # Vercel deployment config
@@ -254,7 +269,8 @@ trojans-coaching-assistant/
 - `client/src/App.tsx:66` - RFU Regulation 15 rules function
 - `client/src/App.tsx:275` - AI prompt construction
 - `client/src/lib/session-parser.ts` - Markdown parser for AI responses
-- `server/routes.ts` - Backend API proxy with comprehensive logging
+- `server/routes.ts` - Backend API proxy (local development)
+- `api/generate-session.ts` - Serverless function (production deployment)
 
 ---
 
