@@ -5,7 +5,21 @@
       "Bash(npm install:*)",
       "Bash(curl:*)",
       "Bash(taskkill:*)",
-      "Bash(powershell -Command \"Stop-Process -Name node -Force\")"
+      "Bash(powershell -Command \"Stop-Process -Name node -Force\")",
+      "Bash(rm:*)",
+      "Bash(npm run build:*)",
+      "Bash(cd:*)",
+      "Bash(tree:*)",
+      "Bash(for file in client/src/components/ui/*.tsx)",
+      "Bash(do basename \"$file\")",
+      "Bash(done)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git restore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
